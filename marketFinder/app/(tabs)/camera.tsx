@@ -1,11 +1,11 @@
-import RestaurantRegister from "@/src/components/features/restaurant-register";
+import CameraCapture from "@/src/components/features/camera-capture";
 import React from "react";
 import { SafeAreaView, StyleSheet } from "react-native";
 
-export default function TabTwoScreen() {
+export default function CameraScreen() {
   return (
     <SafeAreaView style={styles.container}>
-      <RestaurantRegister />
+      <CameraCapture />
     </SafeAreaView>
   );
 }
@@ -13,6 +13,6 @@ export default function TabTwoScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#000",
   },
 });

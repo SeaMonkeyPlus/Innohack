@@ -1,7 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from "react-native";
 
-import { LanguageSelector } from '@components/features/language-selector';
-import { MapViewComponent } from '@components/features/map-view';
+import { LanguageSelector } from "@components/features/language-selector";
+import { MapViewComponent } from "@components/features/map-view";
 
 export default function HomeScreen() {
   return (
@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   languageSelectorContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 50,
     left: 16,
     zIndex: 1000,

@@ -38,7 +38,7 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: t.tabs.register,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus.circle.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
       />
     </Tabs>

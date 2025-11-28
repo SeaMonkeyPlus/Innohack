@@ -244,6 +244,7 @@ const PREDICT_API_URL = process.env.EXPO_PUBLIC_PREDICT_API_URL || "http://local
 // 이미지 예측 API 응답 타입
 export interface PredictApiResponse {
   label: string;
+  label_translated?: string;
   confidence: number;
   chosen_label: string;
   shops: PredictShop[];
@@ -256,20 +257,27 @@ export interface PredictApiResponse {
 export interface PredictShop {
   store_id: number;
   store_name: string;
+  name_en?: string;
   lat: number;
   lon: number;
   address: string;
+  address_en?: string;
   menu_id: number;
   menu_name: string;
   menu_price: number;
   similarity: number;
+  summary?: string;
+  summary_en?: string;
   menus: PredictMenu[];
 }
 
 export interface PredictMenu {
   menu_id: number;
   menu_name: string;
+  name_en?: string;
   menu_price: number;
+  summary?: string;
+  summary_en?: string;
 }
 
 /**
@@ -320,6 +328,8 @@ export const predictFoodImage = async (
     }
 
     const data: PredictApiResponse = await response.json();
+    console.log(data);
+
     return data;
   } catch (error) {
     console.error("Error predicting food image:", error);

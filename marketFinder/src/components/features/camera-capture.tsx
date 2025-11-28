@@ -17,6 +17,7 @@ import { useSearch } from "../../contexts/search-context";
 import { useLanguage } from "../../contexts/language-context";
 import { useTranslation } from "@hooks/use-translation";
 import { predictFoodImage } from "../../services/market-api";
+import { LanguageSelector } from "./language-selector";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -300,8 +301,12 @@ export default function CameraCapture() {
       // 취소되지 않았다면 결과 처리
       if (!abortControllerRef.current.signal.aborted) {
         if (result && result.chosen_label && result.shops && result.shops.length > 0) {
+          // 언어에 맞는 label 선택
+          const displayLabel =
+            selectedLanguage.code === "en" && result.label_translated ? result.label_translated : result.chosen_label;
+
           // 분석 성공 - 검색 결과와 설명 데이터 저장 및 홈 탭으로 이동
-          setSearchData(result.chosen_label, capturedImage, result);
+          setSearchData(displayLabel, capturedImage, result);
 
           // 홈 탭으로 이동
           router.push("/(tabs)");
@@ -338,6 +343,11 @@ export default function CameraCapture() {
   if (!capturedImage) {
     return (
       <View style={styles.container}>
+        {/* Language Selector - Fixed at top left */}
+        <View style={styles.languageSelectorContainer}>
+          <LanguageSelector />
+        </View>
+
         <CameraView style={styles.camera} facing={facing} ref={cameraRef}>
           <View style={styles.cameraOverlay}>
             <View style={styles.topBar}>
@@ -681,5 +691,11 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  languageSelectorContainer: {
+    position: "absolute",
+    top: 50,
+    left: 16,
+    zIndex: 1000,
   },
 });

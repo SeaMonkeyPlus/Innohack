@@ -45,9 +45,9 @@ export function MapViewComponent({
   // focusedLocation이 변경되면 지도 이동
   useEffect(() => {
     if (focusedLocation && mapRef.current) {
-      // 리스트가 하단 40%를 가리므로, 마커를 보이는 영역(상단 60%)의 중앙에 놓기 위해
-      // 위도를 약간 위로 보정
-      const latitudeOffset = 0.002;
+      // 리스트가 하단을 가리므로, 마커를 상단에 배치하기 위해
+      // 지도 중심을 아래로 이동 (마커가 상단에 보이도록)
+      const latitudeOffset = -0.004;
       mapRef.current.animateToRegion(
         {
           latitude: focusedLocation.latitude + latitudeOffset,

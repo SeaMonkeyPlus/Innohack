@@ -3,6 +3,7 @@ import * as Location from "expo-location";
 import React, { useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { MenuItem, Shop } from "../../types/shop";
+import { LanguageSelector } from "./language-selector";
 
 interface FormData {
   name: string;
@@ -212,6 +213,11 @@ export default function RestaurantRegister() {
   // 검증 화면
   const renderVerificationScreen = () => (
     <View style={styles.verificationContainer}>
+      {/* Language Selector - Fixed at top left */}
+      <View style={styles.languageSelectorContainer}>
+        <LanguageSelector />
+      </View>
+
       <View style={styles.verificationBox}>
         <Text style={styles.verificationIcon}>🔐</Text>
         <Text style={styles.verificationTitle}>가게 등록 인증</Text>
@@ -482,30 +488,37 @@ export default function RestaurantRegister() {
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* 진행 상태 표시 */}
-      <View style={styles.progressContainer}>
-        <View style={[styles.progressStep, step >= 1 && styles.progressStepActive]}>
-          <Text style={[styles.progressStepText, step >= 1 && styles.progressStepTextActive]}>1</Text>
-        </View>
-        <View style={[styles.progressLine, step >= 2 && styles.progressLineActive]} />
-        <View style={[styles.progressStep, step >= 2 && styles.progressStepActive]}>
-          <Text style={[styles.progressStepText, step >= 2 && styles.progressStepTextActive]}>2</Text>
-        </View>
-        <View style={[styles.progressLine, step >= 3 && styles.progressLineActive]} />
-        <View style={[styles.progressStep, step >= 3 && styles.progressStepActive]}>
-          <Text style={[styles.progressStepText, step >= 3 && styles.progressStepTextActive]}>3</Text>
-        </View>
+    <View style={styles.container}>
+      {/* Language Selector - Fixed at top left */}
+      <View style={styles.languageSelectorContainer}>
+        <LanguageSelector />
       </View>
 
-      <View style={styles.stepLabelsContainer}>
-        <Text style={[styles.stepLabel, step === 1 && styles.stepLabelActive]}>기본정보</Text>
-        <Text style={[styles.stepLabel, step === 2 && styles.stepLabelActive]}>위치/사진</Text>
-        <Text style={[styles.stepLabel, step === 3 && styles.stepLabelActive]}>메뉴</Text>
-      </View>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* 진행 상태 표시 */}
+        <View style={styles.progressContainer}>
+          <View style={[styles.progressStep, step >= 1 && styles.progressStepActive]}>
+            <Text style={[styles.progressStepText, step >= 1 && styles.progressStepTextActive]}>1</Text>
+          </View>
+          <View style={[styles.progressLine, step >= 2 && styles.progressLineActive]} />
+          <View style={[styles.progressStep, step >= 2 && styles.progressStepActive]}>
+            <Text style={[styles.progressStepText, step >= 2 && styles.progressStepTextActive]}>2</Text>
+          </View>
+          <View style={[styles.progressLine, step >= 3 && styles.progressLineActive]} />
+          <View style={[styles.progressStep, step >= 3 && styles.progressStepActive]}>
+            <Text style={[styles.progressStepText, step >= 3 && styles.progressStepTextActive]}>3</Text>
+          </View>
+        </View>
 
-      {step === 1 ? renderStep1() : step === 2 ? renderStep2() : renderStep3()}
-    </ScrollView>
+        <View style={styles.stepLabelsContainer}>
+          <Text style={[styles.stepLabel, step === 1 && styles.stepLabelActive]}>기본정보</Text>
+          <Text style={[styles.stepLabel, step === 2 && styles.stepLabelActive]}>위치/사진</Text>
+          <Text style={[styles.stepLabel, step === 3 && styles.stepLabelActive]}>메뉴</Text>
+        </View>
+
+        {step === 1 ? renderStep1() : step === 2 ? renderStep2() : renderStep3()}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -513,6 +526,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  languageSelectorContainer: {
+    position: "absolute",
+    top: 50,
+    left: 16,
+    zIndex: 1000,
   },
   verificationContainer: {
     flex: 1,

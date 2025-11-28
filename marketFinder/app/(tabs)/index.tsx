@@ -142,13 +142,17 @@ export default function HomeScreen() {
   // 예측 결과가 있을 때 가게 목록 설정
   useEffect(() => {
     if (predictResult && predictResult.shops) {
+      const isEnglish = selectedLanguage.code === "en";
+
       // PredictShop을 Shop으로 변환
       const convertedShops: Shop[] = predictResult.shops.map((shop) => ({
         id: shop.store_id.toString(),
-        name: shop.store_name,
-        address: shop.address,
+        name: isEnglish && shop.name_en ? shop.name_en : shop.store_name,
+        address: isEnglish && shop.address_en ? shop.address_en : shop.address,
         rating: 0,
-        description: `${shop.menu_name} - ${shop.menu_price.toLocaleString()}원`,
+        description: `${
+          isEnglish && shop.menus?.[0]?.name_en ? shop.menus[0].name_en : shop.menu_name
+        } - ${shop.menu_price.toLocaleString()}${t.common.won}`,
         images: [],
         latitude: Number(shop.lat),
         longitude: Number(shop.lon),
@@ -228,7 +232,8 @@ export default function HomeScreen() {
   };
 
   const handleBackToMarkets = () => {
-    clearSearch(); // 검색 정보 초기화 - useEffect가 자동으로 전체 가게 목록 로드
+    clearSearch(); // 검색 정보 초기화
+    setViewMode("markets"); // 시장 선택 페이지로 이동
     setFocusedLocation(null);
   };
 

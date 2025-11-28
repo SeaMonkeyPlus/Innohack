@@ -1,14 +1,28 @@
 import { Market } from "@/src/types/market";
-import React, { useState } from "react";
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  PanResponder,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+const SCREEN_HEIGHT = Dimensions.get("window").height;
+const MIN_HEIGHT = SCREEN_HEIGHT * 0.1; // 10%
+const MAX_HEIGHT = SCREEN_HEIGHT * 0.85; // 85%
 
 interface MarketListProps {
   markets: Market[];
   selectedMarketId?: string;
   onMarketPress: (market: Market) => void;
   onSelectMarket: (market: Market) => void;
-  isMinimized: boolean;
-  onToggleMinimize: () => void;
+  sharedHeight: number | null;
+  onHeightChange: (height: number) => void;
 }
 
 export function MarketList({
@@ -16,10 +30,67 @@ export function MarketList({
   selectedMarketId,
   onMarketPress,
   onSelectMarket,
-  isMinimized,
-  onToggleMinimize,
+  sharedHeight,
+  onHeightChange,
 }: MarketListProps) {
   const [expandedMarketId, setExpandedMarketId] = useState<string | null>(null);
+  const initialHeight = sharedHeight || MIN_HEIGHT;
+  const [currentHeight, setCurrentHeight] = useState(initialHeight);
+  const panelHeight = useRef(new Animated.Value(initialHeight)).current;
+  const dragStartHeight = useRef(initialHeight);
+  const lastHeight = useRef(initialHeight);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        // 드래그 시작 시 현재 높이 저장 (lastHeight를 사용하여 즉시 반영)
+        dragStartHeight.current = lastHeight.current;
+      },
+      onPanResponderMove: (_, gesture) => {
+        // 위로 드래그하면 gesture.dy가 음수 (높이 증가)
+        // 아래로 드래그하면 gesture.dy가 양수 (높이 감소)
+        const newHeight = dragStartHeight.current - gesture.dy;
+
+        // 최소/최대 높이 제한을 적용하여 실시간 업데이트
+        if (newHeight >= MIN_HEIGHT && newHeight <= MAX_HEIGHT) {
+          panelHeight.setValue(newHeight);
+        } else if (newHeight < MIN_HEIGHT) {
+          panelHeight.setValue(MIN_HEIGHT);
+        } else if (newHeight > MAX_HEIGHT) {
+          panelHeight.setValue(MAX_HEIGHT);
+        }
+      },
+      onPanResponderRelease: (_, gesture) => {
+        // 최종 높이 계산
+        let finalHeight = dragStartHeight.current - gesture.dy;
+
+        // 최소/최대 높이 제한
+        if (finalHeight < MIN_HEIGHT) {
+          finalHeight = MIN_HEIGHT;
+        } else if (finalHeight > MAX_HEIGHT) {
+          finalHeight = MAX_HEIGHT;
+        }
+
+        // 현재 높이 상태 업데이트
+        setCurrentHeight(finalHeight);
+        lastHeight.current = finalHeight;
+        onHeightChange(finalHeight); // 부모 컴포넌트에 높이 전달
+
+        // 부드러운 애니메이션으로 최종 위치에 고정
+        Animated.spring(panelHeight, {
+          toValue: finalHeight,
+          useNativeDriver: false,
+          friction: 8,
+          tension: 40,
+        }).start(() => {
+          // 애니메이션 완료 후 값 명시적으로 설정
+          panelHeight.setValue(finalHeight);
+        });
+      },
+    })
+  ).current;
 
   const handleMarketCardPress = (market: Market) => {
     // Toggle expand/collapse
@@ -92,25 +163,22 @@ export function MarketList({
   };
 
   return (
-    <View style={[styles.container, isMinimized && styles.containerMinimized]}>
-      <TouchableOpacity style={styles.header} onPress={onToggleMinimize} activeOpacity={0.8}>
+    <Animated.View style={[styles.container, { height: panelHeight }]}>
+      <View style={styles.header} {...panResponder.panHandlers}>
         <View style={styles.dragHandle} />
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>부산 전통시장</Text>
           <Text style={styles.headerCount}>{markets.length}개</Text>
         </View>
-        <Text style={styles.toggleIcon}>{isMinimized ? "▲" : "▼"}</Text>
-      </TouchableOpacity>
-      {!isMinimized && (
-        <FlatList
-          data={markets}
-          renderItem={renderMarketCard}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
-    </View>
+      </View>
+      <FlatList
+        data={markets}
+        renderItem={renderMarketCard}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+      />
+    </Animated.View>
   );
 }
 
@@ -130,21 +198,18 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 10,
   },
-  containerMinimized: {
-    height: 80,
-  },
   header: {
     flexDirection: "column",
     alignItems: "center",
-    paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 12,
+    paddingHorizontal: 20,
   },
   dragHandle: {
     width: 40,
-    height: 4,
+    height: 5,
     backgroundColor: "#ddd",
-    borderRadius: 2,
+    borderRadius: 3,
     marginBottom: 12,
   },
   headerContent: {
@@ -165,11 +230,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
-  },
-  toggleIcon: {
-    fontSize: 18,
-    color: "#666",
-    marginTop: 8,
   },
   listContent: {
     padding: 16,

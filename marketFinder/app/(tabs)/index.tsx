@@ -8,10 +8,21 @@ import { ShopList } from "@/src/components/features/shop-list";
 import { useSearch } from "@/src/contexts/search-context";
 
 // 플랫폼별로 Map 컴포넌트 import
-const MapViewComponent =
-  Platform.OS === "web"
-    ? require("@/src/components/features/map-view/index.web").MapViewComponent
-    : require("@/src/components/features/map-view/index.native").MapViewComponent;
+let MapViewComponent: React.ComponentType<any>;
+try {
+  MapViewComponent =
+    Platform.OS === "web"
+      ? require("@/src/components/features/map-view/index.web").MapViewComponent
+      : require("@/src/components/features/map-view/index.native").MapViewComponent;
+} catch (error) {
+  // Fallback for when native maps are not available
+  MapViewComponent = () => (
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#e0e0e0" }}>
+      <Text style={{ fontSize: 16, color: "#666" }}>지도를 불러올 수 없습니다</Text>
+      <Text style={{ fontSize: 14, color: "#888", marginTop: 8 }}>웹 버전을 사용해주세요</Text>
+    </View>
+  );
+}
 
 // 부산 전통시장 샘플 데이터 (products 포함)
 const sampleMarkets: Market[] = [
@@ -388,8 +399,8 @@ export default function HomeScreen() {
   const { searchKeyword, clearSearch, selectedMarketId: contextSelectedMarketId, setSelectedMarket } = useSearch();
   const [selectedMarketId, setSelectedMarketId] = useState<string | undefined>(contextSelectedMarketId || undefined);
   const [focusedLocation, setFocusedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [isListMinimized, setIsListMinimized] = useState(false);
   const [viewMode, setViewMode] = useState<"markets" | "shops">("markets");
+  const [sharedListHeight, setSharedListHeight] = useState<number | null>(null);
 
   // Context의 선택된 시장 ID와 로컬 상태 동기화
   useEffect(() => {
@@ -402,13 +413,11 @@ export default function HomeScreen() {
   useEffect(() => {
     if (searchKeyword && selectedMarketId) {
       setViewMode("shops");
-      setIsListMinimized(false);
     }
   }, [searchKeyword, selectedMarketId]);
 
   const handleMarkerPress = (market: Market) => {
     setSelectedMarketId(market.id);
-    setIsListMinimized(false);
   };
 
   const handleSelectMarket = (market: Market) => {
@@ -416,7 +425,6 @@ export default function HomeScreen() {
     setSelectedMarketId(market.id);
     setFocusedLocation({ latitude: market.latitude, longitude: market.longitude });
     setViewMode("shops");
-    setIsListMinimized(false);
   };
 
   const handleMarketPress = (market: Market) => {
@@ -426,7 +434,6 @@ export default function HomeScreen() {
   const handleChangeMarket = () => {
     setViewMode("markets");
     setFocusedLocation(null);
-    setIsListMinimized(false);
   };
 
   const handleShopPress = (shop: any) => {
@@ -438,12 +445,7 @@ export default function HomeScreen() {
   const handleBackToMarkets = () => {
     setViewMode("markets");
     setFocusedLocation(null);
-    setIsListMinimized(false);
     clearSearch();
-  };
-
-  const handleToggleMinimize = () => {
-    setIsListMinimized(!isListMinimized);
   };
 
   const selectedMarket = sampleMarkets.find((m) => m.id === selectedMarketId);
@@ -492,18 +494,18 @@ export default function HomeScreen() {
           selectedMarketId={selectedMarketId}
           onMarketPress={handleMarketPress}
           onSelectMarket={handleSelectMarket}
-          isMinimized={isListMinimized}
-          onToggleMinimize={handleToggleMinimize}
+          sharedHeight={sharedListHeight}
+          onHeightChange={setSharedListHeight}
         />
       ) : selectedMarket ? (
         <ShopList
           shops={filteredShops}
           marketName={searchKeyword ? `${selectedMarket.name} - "${searchKeyword}" 검색 결과` : selectedMarket.name}
           onBack={handleBackToMarkets}
-          isMinimized={isListMinimized}
-          onToggleMinimize={handleToggleMinimize}
           onShopPress={handleShopPress}
           searchKeyword={searchKeyword}
+          sharedHeight={sharedListHeight}
+          onHeightChange={setSharedListHeight}
         />
       ) : null}
     </View>

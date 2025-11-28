@@ -1,7 +1,8 @@
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import React, { useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { MenuItem } from "../../types/restaurant";
+import { MenuItem, Shop } from "../../types/shop";
 
 interface FormData {
   name: string;
@@ -9,18 +10,28 @@ interface FormData {
   address: string;
   description: string;
   category: string;
+  openingHours: string;
+  latitude: number;
+  longitude: number;
   images: string[];
   menuItems: MenuItem[];
 }
 
+const VERIFICATION_CODE = "0000"; // 임시 검증 코드
+
 export default function RestaurantRegister() {
-  const [step, setStep] = useState<1 | 2>(1);
+  const [isVerified, setIsVerified] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [formData, setFormData] = useState<FormData>({
     name: "",
     phone: "",
     address: "",
     description: "",
     category: "",
+    openingHours: "",
+    latitude: 0,
+    longitude: 0,
     images: [],
     menuItems: [],
   });
@@ -30,30 +41,57 @@ export default function RestaurantRegister() {
     price: 0,
     description: "",
   });
-  const [menuItemImage, setMenuItemImage] = useState<string>("");
+
+  // 검증 코드 확인
+  const handleVerifyCode = () => {
+    if (verificationCode === VERIFICATION_CODE) {
+      setIsVerified(true);
+      Alert.alert("성공", "검증이 완료되었습니다. 가게 등록을 진행하세요.");
+    } else {
+      Alert.alert("오류", "잘못된 검증 코드입니다. 다시 시도해주세요.");
+      setVerificationCode("");
+    }
+  };
+
+  // 현재 위치 가져오기
+  const getCurrentLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("권한 필요", "위치 권한이 필요합니다.");
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      setFormData({
+        ...formData,
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+      Alert.alert("성공", "현재 위치가 설정되었습니다.");
+    } catch (error) {
+      Alert.alert("오류", "위치를 가져올 수 없습니다.");
+    }
+  };
 
   // 이미지 선택
-  const pickImage = async (type: "restaurant" | "menu") => {
+  const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: type === "restaurant",
+      allowsMultipleSelection: true,
       quality: 0.8,
     });
 
     if (!result.canceled) {
-      if (type === "restaurant") {
-        setFormData({
-          ...formData,
-          images: [...formData.images, ...result.assets.map((asset) => asset.uri)],
-        });
-      } else {
-        setMenuItemImage(result.assets[0].uri);
-      }
+      setFormData({
+        ...formData,
+        images: [...formData.images, ...result.assets.map((asset) => asset.uri)],
+      });
     }
   };
 
-  // 가게 이미지 삭제
-  const removeRestaurantImage = (index: number) => {
+  // 이미지 삭제
+  const removeImage = (index: number) => {
     setFormData({
       ...formData,
       images: formData.images.filter((_, i) => i !== index),
@@ -68,10 +106,9 @@ export default function RestaurantRegister() {
     }
 
     const newMenuItem: MenuItem = {
-      id: Date.now().toString(),
       name: currentMenuItem.name,
       price: currentMenuItem.price,
-      description: currentMenuItem.description || "",
+      description: currentMenuItem.description,
     };
 
     setFormData({
@@ -79,92 +116,90 @@ export default function RestaurantRegister() {
       menuItems: [...formData.menuItems, newMenuItem],
     });
 
-    // 입력 필드 초기화
     setCurrentMenuItem({ name: "", price: 0, description: "" });
-    setMenuItemImage("");
-
     Alert.alert("성공", "메뉴가 추가되었습니다.");
   };
 
   // 메뉴 삭제
-  const removeMenuItem = (id: string) => {
+  const removeMenuItem = (index: number) => {
     setFormData({
       ...formData,
-      menuItems: formData.menuItems.filter((item) => item.id !== id),
+      menuItems: formData.menuItems.filter((_, i) => i !== index),
     });
   };
 
-  // 1단계 유효성 검사
+  // 1단계 유효성 검사 (기본 정보)
   const validateStep1 = () => {
     if (!formData.name.trim()) {
-      Alert.alert("알림", "가게 이름을 입력해주세요.");
+      Alert.alert("필수 입력", "가게 이름을 입력해주세요.");
       return false;
     }
-    if (!formData.phone.trim()) {
-      Alert.alert("알림", "전화번호를 입력해주세요.");
-      return false;
-    }
-    if (!formData.address.trim()) {
-      Alert.alert("알림", "주소를 입력해주세요.");
-      return false;
-    }
-    if (!formData.category.trim()) {
-      Alert.alert("알림", "카테고리를 입력해주세요.");
-      return false;
-    }
-    if (formData.images.length === 0) {
-      Alert.alert("알림", "최소 1개 이상의 가게 사진을 추가해주세요.");
+    return true;
+  };
+
+  // 2단계 유효성 검사 (위치 정보)
+  const validateStep2 = () => {
+    if (formData.latitude === 0 && formData.longitude === 0) {
+      Alert.alert("필수 입력", "가게 위치를 설정해주세요.");
       return false;
     }
     return true;
   };
 
   // 다음 단계로
-  const goToNextStep = () => {
+  const goToStep2 = () => {
     if (validateStep1()) {
       setStep(2);
     }
   };
 
+  const goToStep3 = () => {
+    if (validateStep2()) {
+      setStep(3);
+    }
+  };
+
   // 등록 완료
   const handleSubmit = async () => {
-    if (formData.menuItems.length === 0) {
-      Alert.alert("알림", "최소 1개 이상의 메뉴를 추가해주세요.");
-      return;
-    }
-
     try {
-      // ============================================
-      // 백엔드 API 연동 (주석 처리)
-      // ============================================
-      // import { createRestaurant, uploadImages } from "../../services/restaurant-api";
-      //
-      // // 1. 이미지 업로드 (필요한 경우)
-      // const uploadedImageUrls = await uploadImages(formData.images);
-      //
-      // // 2. 가게 등록 API 호출
-      // const newRestaurant = await createRestaurant({
-      //   name: formData.name,
-      //   phone: formData.phone,
-      //   address: formData.address,
-      //   description: formData.description,
-      //   category: formData.category,
-      //   images: uploadedImageUrls, // 업로드된 이미지 URL 사용
-      //   menuItems: formData.menuItems.map(item => ({
-      //     name: item.name,
-      //     price: item.price,
-      //     description: item.description,
-      //   })),
-      // });
-      //
-      // console.log("등록된 가게:", newRestaurant);
+      const newShop: Omit<Shop, "id" | "rating"> = {
+        name: formData.name,
+        address: formData.address || undefined,
+        description: formData.description || undefined,
+        category: formData.category || undefined,
+        phone: formData.phone || undefined,
+        openingHours: formData.openingHours || undefined,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        images: formData.images.length > 0 ? formData.images : undefined,
+        menu: formData.menuItems.length > 0 ? formData.menuItems : undefined,
+      };
+
+      console.log("등록할 가게 정보:", newShop);
+
+      // TODO: 백엔드 API 연동
+      // await createShop(newShop);
 
       Alert.alert("성공", "가게 등록이 완료되었습니다!", [
         {
           text: "확인",
           onPress: () => {
-            // 등록 완료 후 처리 (예: 홈으로 이동)
-            // navigation.navigate('Home');
+            // 폼 초기화
+            setFormData({
+              name: "",
+              phone: "",
+              address: "",
+              description: "",
+              category: "",
+              openingHours: "",
+              latitude: 0,
+              longitude: 0,
+              images: [],
+              menuItems: [],
+            });
+            setStep(1);
+            setIsVerified(false);
+            setVerificationCode("");
           },
         },
       ]);
@@ -174,75 +209,109 @@ export default function RestaurantRegister() {
     }
   };
 
-  // 1단계: 가게 정보 입력
+  // 검증 화면
+  const renderVerificationScreen = () => (
+    <View style={styles.verificationContainer}>
+      <View style={styles.verificationBox}>
+        <Text style={styles.verificationIcon}>🔐</Text>
+        <Text style={styles.verificationTitle}>가게 등록 인증</Text>
+        <Text style={styles.verificationSubtitle}>가게 등록을 위해 검증 코드를 입력해주세요</Text>
+
+        <View style={styles.codeInputContainer}>
+          <TextInput
+            style={styles.codeInput}
+            value={verificationCode}
+            onChangeText={setVerificationCode}
+            placeholder="검증 코드 입력"
+            placeholderTextColor="#999"
+            keyboardType="number-pad"
+            maxLength={4}
+            secureTextEntry
+          />
+        </View>
+
+        <TouchableOpacity
+          style={[styles.verifyButton, !verificationCode && styles.verifyButtonDisabled]}
+          onPress={handleVerifyCode}
+          disabled={!verificationCode}
+        >
+          <Text style={styles.verifyButtonText}>확인</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.verificationHint}>※ 관리자로부터 받은 4자리 코드를 입력하세요</Text>
+      </View>
+    </View>
+  );
+
+  // 1단계: 기본 정보
   const renderStep1 = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>가게 정보 입력</Text>
+      <Text style={styles.stepTitle}>📝 기본 정보</Text>
 
-      {/* 가게 사진 */}
+      {/* 필수: 가게 이름 */}
       <View style={styles.section}>
-        <Text style={styles.label}>가게 사진 *</Text>
-        <TouchableOpacity style={styles.imagePickerButton} onPress={() => pickImage("restaurant")}>
-          <Text style={styles.imagePickerButtonText}>📷 사진 추가</Text>
-        </TouchableOpacity>
-        <ScrollView horizontal style={styles.imageList} showsHorizontalScrollIndicator={false}>
-          {formData.images.map((uri, index) => (
-            <View key={index} style={styles.imageItem}>
-              <Image source={{ uri }} style={styles.previewImage} />
-              <TouchableOpacity style={styles.removeImageButton} onPress={() => removeRestaurantImage(index)}>
-                <Text style={styles.removeImageButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* 가게 이름 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>가게 이름 *</Text>
+        <Text style={styles.label}>
+          가게 이름 <Text style={styles.required}>*</Text>
+        </Text>
         <TextInput
           style={styles.input}
           value={formData.name}
           onChangeText={(text) => setFormData({ ...formData, name: text })}
-          placeholder="예: 맛있는 한식당"
+          placeholder="예: 할매 호떡집"
+          placeholderTextColor="#999"
         />
       </View>
 
-      {/* 카테고리 */}
+      {/* 선택: 카테고리 */}
       <View style={styles.section}>
-        <Text style={styles.label}>카테고리 *</Text>
+        <Text style={styles.label}>카테고리</Text>
         <TextInput
           style={styles.input}
           value={formData.category}
           onChangeText={(text) => setFormData({ ...formData, category: text })}
-          placeholder="예: 한식, 중식, 일식"
+          placeholder="예: 떡·디저트, 한식, 분식"
+          placeholderTextColor="#999"
         />
       </View>
 
-      {/* 전화번호 */}
+      {/* 선택: 전화번호 */}
       <View style={styles.section}>
-        <Text style={styles.label}>전화번호 *</Text>
+        <Text style={styles.label}>전화번호</Text>
         <TextInput
           style={styles.input}
           value={formData.phone}
           onChangeText={(text) => setFormData({ ...formData, phone: text })}
-          placeholder="예: 02-1234-5678"
+          placeholder="예: 051-245-1234"
           keyboardType="phone-pad"
+          placeholderTextColor="#999"
         />
       </View>
 
-      {/* 주소 */}
+      {/* 선택: 주소 */}
       <View style={styles.section}>
-        <Text style={styles.label}>주소 *</Text>
+        <Text style={styles.label}>주소</Text>
         <TextInput
           style={styles.input}
           value={formData.address}
           onChangeText={(text) => setFormData({ ...formData, address: text })}
-          placeholder="예: 서울특별시 강남구 테헤란로 123"
+          placeholder="예: 부산 중구 신창동4가 14-3"
+          placeholderTextColor="#999"
         />
       </View>
 
-      {/* 설명 */}
+      {/* 선택: 영업시간 */}
+      <View style={styles.section}>
+        <Text style={styles.label}>영업시간</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.openingHours}
+          onChangeText={(text) => setFormData({ ...formData, openingHours: text })}
+          placeholder="예: 09:00 - 19:00"
+          placeholderTextColor="#999"
+        />
+      </View>
+
+      {/* 선택: 설명 */}
       <View style={styles.section}>
         <Text style={styles.label}>가게 설명</Text>
         <TextInput
@@ -252,42 +321,108 @@ export default function RestaurantRegister() {
           placeholder="가게에 대한 설명을 입력하세요"
           multiline
           numberOfLines={4}
+          textAlignVertical="top"
+          placeholderTextColor="#999"
         />
       </View>
 
-      <TouchableOpacity style={styles.nextButton} onPress={goToNextStep}>
-        <Text style={styles.nextButtonText}>다음 단계</Text>
+      <TouchableOpacity style={styles.nextButton} onPress={goToStep2}>
+        <Text style={styles.nextButtonText}>다음 단계 →</Text>
       </TouchableOpacity>
     </View>
   );
 
-  // 2단계: 메뉴 등록
+  // 2단계: 위치 및 사진
   const renderStep2 = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>메뉴 등록</Text>
+      <Text style={styles.stepTitle}>📍 위치 및 사진</Text>
+
+      {/* 필수: 위치 정보 */}
+      <View style={styles.section}>
+        <Text style={styles.label}>
+          가게 위치 <Text style={styles.required}>*</Text>
+        </Text>
+        <View style={styles.locationContainer}>
+          <View style={styles.locationInfo}>
+            {formData.latitude !== 0 && formData.longitude !== 0 ? (
+              <>
+                <Text style={styles.locationText}>위도: {formData.latitude.toFixed(6)}</Text>
+                <Text style={styles.locationText}>경도: {formData.longitude.toFixed(6)}</Text>
+                <Text style={styles.locationSuccess}>✓ 위치 설정 완료</Text>
+              </>
+            ) : (
+              <Text style={styles.locationPlaceholder}>위치를 설정해주세요</Text>
+            )}
+          </View>
+          <TouchableOpacity style={styles.locationButton} onPress={getCurrentLocation}>
+            <Text style={styles.locationButtonText}>📍 현재 위치</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.helpText}>※ 현재 위치 버튼을 눌러 가게 위치를 설정하세요</Text>
+      </View>
+
+      {/* 선택: 가게 사진 */}
+      <View style={styles.section}>
+        <Text style={styles.label}>가게 사진</Text>
+        <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+          <Text style={styles.imagePickerButtonText}>📷 사진 추가</Text>
+        </TouchableOpacity>
+        {formData.images.length > 0 && (
+          <ScrollView horizontal style={styles.imageList} showsHorizontalScrollIndicator={false}>
+            {formData.images.map((uri, index) => (
+              <View key={index} style={styles.imageItem}>
+                <Image source={{ uri }} style={styles.previewImage} />
+                <TouchableOpacity style={styles.removeImageButton} onPress={() => removeImage(index)}>
+                  <Text style={styles.removeImageButtonText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        )}
+        <Text style={styles.imageCount}>총 {formData.images.length}장</Text>
+      </View>
+
+      {/* 버튼 그룹 */}
+      <View style={styles.buttonGroup}>
+        <TouchableOpacity style={styles.backButton} onPress={() => setStep(1)}>
+          <Text style={styles.backButtonText}>← 이전</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.nextButton} onPress={goToStep3}>
+          <Text style={styles.nextButtonText}>다음 단계 →</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  // 3단계: 메뉴 등록
+  const renderStep3 = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepTitle}>🍽️ 메뉴 등록 (선택)</Text>
 
       {/* 메뉴 입력 폼 */}
       <View style={styles.menuFormContainer}>
         <Text style={styles.sectionTitle}>새 메뉴 추가</Text>
 
         <View style={styles.section}>
-          <Text style={styles.label}>메뉴 이름 *</Text>
+          <Text style={styles.label}>메뉴 이름</Text>
           <TextInput
             style={styles.input}
             value={currentMenuItem.name}
             onChangeText={(text) => setCurrentMenuItem({ ...currentMenuItem, name: text })}
-            placeholder="예: 김치찌개"
+            placeholder="예: 씨앗호떡"
+            placeholderTextColor="#999"
           />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.label}>가격 (원) *</Text>
+          <Text style={styles.label}>가격 (원)</Text>
           <TextInput
             style={styles.input}
             value={currentMenuItem.price ? currentMenuItem.price.toString() : ""}
             onChangeText={(text) => setCurrentMenuItem({ ...currentMenuItem, price: parseInt(text) || 0 })}
-            placeholder="예: 9000"
+            placeholder="예: 2000"
             keyboardType="numeric"
+            placeholderTextColor="#999"
           />
         </View>
 
@@ -297,9 +432,11 @@ export default function RestaurantRegister() {
             style={[styles.input, styles.textArea]}
             value={currentMenuItem.description}
             onChangeText={(text) => setCurrentMenuItem({ ...currentMenuItem, description: text })}
-            placeholder="메뉴에 대한 설명을 입력하세요"
+            placeholder="예: 해바라기씨, 호박씨 듬뿍"
             multiline
-            numberOfLines={3}
+            numberOfLines={2}
+            textAlignVertical="top"
+            placeholderTextColor="#999"
           />
         </View>
 
@@ -309,33 +446,40 @@ export default function RestaurantRegister() {
       </View>
 
       {/* 추가된 메뉴 목록 */}
-      <View style={styles.menuListContainer}>
-        <Text style={styles.sectionTitle}>등록된 메뉴 ({formData.menuItems.length}개)</Text>
-        {formData.menuItems.map((item) => (
-          <View key={item.id} style={styles.menuListItem}>
-            <View style={styles.menuListItemInfo}>
-              <Text style={styles.menuListItemName}>{item.name}</Text>
-              <Text style={styles.menuListItemPrice}>₩{item.price.toLocaleString()}</Text>
-              {item.description && <Text style={styles.menuListItemDesc}>{item.description}</Text>}
+      {formData.menuItems.length > 0 && (
+        <View style={styles.menuListContainer}>
+          <Text style={styles.sectionTitle}>등록된 메뉴 ({formData.menuItems.length}개)</Text>
+          {formData.menuItems.map((item, index) => (
+            <View key={index} style={styles.menuListItem}>
+              <View style={styles.menuListItemInfo}>
+                <Text style={styles.menuListItemName}>{item.name}</Text>
+                <Text style={styles.menuListItemPrice}>{item.price.toLocaleString()}원</Text>
+                {item.description && <Text style={styles.menuListItemDesc}>{item.description}</Text>}
+              </View>
+              <TouchableOpacity style={styles.removeMenuButton} onPress={() => removeMenuItem(index)}>
+                <Text style={styles.removeMenuButtonText}>삭제</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.removeMenuButton} onPress={() => removeMenuItem(item.id)}>
-              <Text style={styles.removeMenuButtonText}>삭제</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      )}
 
       {/* 버튼 그룹 */}
       <View style={styles.buttonGroup}>
-        <TouchableOpacity style={styles.backButton} onPress={() => setStep(1)}>
-          <Text style={styles.backButtonText}>이전</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => setStep(2)}>
+          <Text style={styles.backButtonText}>← 이전</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>등록 완료</Text>
+          <Text style={styles.submitButtonText}>✓ 등록 완료</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
+
+  // 메인 렌더링
+  if (!isVerified) {
+    return renderVerificationScreen();
+  }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -348,9 +492,19 @@ export default function RestaurantRegister() {
         <View style={[styles.progressStep, step >= 2 && styles.progressStepActive]}>
           <Text style={[styles.progressStepText, step >= 2 && styles.progressStepTextActive]}>2</Text>
         </View>
+        <View style={[styles.progressLine, step >= 3 && styles.progressLineActive]} />
+        <View style={[styles.progressStep, step >= 3 && styles.progressStepActive]}>
+          <Text style={[styles.progressStepText, step >= 3 && styles.progressStepTextActive]}>3</Text>
+        </View>
       </View>
 
-      {step === 1 ? renderStep1() : renderStep2()}
+      <View style={styles.stepLabelsContainer}>
+        <Text style={[styles.stepLabel, step === 1 && styles.stepLabelActive]}>기본정보</Text>
+        <Text style={[styles.stepLabel, step === 2 && styles.stepLabelActive]}>위치/사진</Text>
+        <Text style={[styles.stepLabel, step === 3 && styles.stepLabelActive]}>메뉴</Text>
+      </View>
+
+      {step === 1 ? renderStep1() : step === 2 ? renderStep2() : renderStep3()}
     </ScrollView>
   );
 }
@@ -360,17 +514,89 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
+  verificationContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+    padding: 20,
+  },
+  verificationBox: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 40,
+    width: "100%",
+    maxWidth: 400,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  verificationIcon: {
+    fontSize: 72,
+    marginBottom: 20,
+  },
+  verificationTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
+  },
+  verificationSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 30,
+  },
+  codeInputContainer: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  codeInput: {
+    borderWidth: 2,
+    borderColor: "#4CAF50",
+    borderRadius: 12,
+    padding: 18,
+    fontSize: 24,
+    textAlign: "center",
+    fontWeight: "bold",
+    color: "#333",
+    letterSpacing: 8,
+  },
+  verifyButton: {
+    backgroundColor: "#4CAF50",
+    paddingVertical: 16,
+    paddingHorizontal: 60,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  verifyButtonDisabled: {
+    backgroundColor: "#ccc",
+  },
+  verifyButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  verificationHint: {
+    fontSize: 12,
+    color: "#999",
+    textAlign: "center",
+    fontStyle: "italic",
+  },
   progressContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 30,
-    paddingHorizontal: 20,
+    paddingTop: 30,
+    paddingHorizontal: 40,
   },
   progressStep: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: "#e0e0e0",
     justifyContent: "center",
     alignItems: "center",
@@ -379,7 +605,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#4CAF50",
   },
   progressStepText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#999",
   },
@@ -390,10 +616,26 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 2,
     backgroundColor: "#e0e0e0",
-    marginHorizontal: 10,
+    marginHorizontal: 8,
   },
   progressLineActive: {
     backgroundColor: "#4CAF50",
+  },
+  stepLabelsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  stepLabel: {
+    fontSize: 12,
+    color: "#999",
+    fontWeight: "500",
+  },
+  stepLabelActive: {
+    color: "#4CAF50",
+    fontWeight: "700",
   },
   stepContainer: {
     padding: 20,
@@ -402,7 +644,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 20,
+    marginBottom: 24,
   },
   section: {
     marginBottom: 20,
@@ -413,24 +655,74 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 8,
   },
+  required: {
+    color: "#f44336",
+    fontSize: 16,
+  },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 8,
-    padding: 12,
+    padding: 14,
     fontSize: 16,
     backgroundColor: "#f9f9f9",
+    color: "#333",
   },
   textArea: {
     height: 100,
     textAlignVertical: "top",
+  },
+  helpText: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 6,
+    fontStyle: "italic",
+  },
+  locationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  locationInfo: {
+    flex: 1,
+    backgroundColor: "#f9f9f9",
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  locationText: {
+    fontSize: 13,
+    color: "#666",
+    marginBottom: 2,
+  },
+  locationSuccess: {
+    fontSize: 13,
+    color: "#4CAF50",
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  locationPlaceholder: {
+    fontSize: 14,
+    color: "#999",
+  },
+  locationButton: {
+    backgroundColor: "#2196F3",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  locationButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
   },
   imagePickerButton: {
     backgroundColor: "#4CAF50",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   imagePickerButtonText: {
     color: "#fff",
@@ -465,21 +757,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
   },
+  imageCount: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 8,
+    textAlign: "center",
+  },
   nextButton: {
     backgroundColor: "#4CAF50",
     padding: 16,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 10,
+    flex: 1,
   },
   nextButtonText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
   },
   menuFormContainer: {
     backgroundColor: "#f8f9fa",
-    padding: 15,
+    padding: 16,
     borderRadius: 10,
     marginBottom: 20,
   },
@@ -487,7 +786,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 15,
+    marginBottom: 16,
   },
   addMenuButton: {
     backgroundColor: "#2196F3",
@@ -508,10 +807,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
-    padding: 15,
+    backgroundColor: "#fff",
+    padding: 14,
     borderRadius: 8,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
   },
   menuListItemInfo: {
     flex: 1,
@@ -523,24 +824,24 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   menuListItemPrice: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
     color: "#4CAF50",
     marginBottom: 4,
   },
   menuListItemDesc: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#666",
   },
   removeMenuButton: {
     backgroundColor: "#f44336",
-    paddingHorizontal: 15,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 5,
+    borderRadius: 6,
   },
   removeMenuButtonText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
   },
   buttonGroup: {
@@ -557,7 +858,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
   },
   submitButton: {
@@ -569,7 +870,7 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
   },
 });

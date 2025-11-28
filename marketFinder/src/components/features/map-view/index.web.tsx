@@ -21,10 +21,10 @@ export function MapViewComponent({ initialRegion }: MapViewComponentProps) {
   const { selectedLanguage } = useLanguage();
   const [mapKey, setMapKey] = useState(0);
 
-  // 기본 위치: 서울
+  // 기본 위치: 부산역
   const defaultRegion = {
-    latitude: 37.5665,
-    longitude: 126.9780,
+    latitude: 35.1156,
+    longitude: 129.0403,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   };

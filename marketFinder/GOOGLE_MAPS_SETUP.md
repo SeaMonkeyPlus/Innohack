@@ -51,19 +51,21 @@
 
 ## 4. 웹 설정
 
-웹에서는 구글맵 JavaScript API를 사용합니다. `app.json`에 추가:
+웹에서는 별도의 구글맵 라이브러리(`@react-google-maps/api`)를 사용합니다.
 
-```json
-{
-  "expo": {
-    "web": {
-      "config": {
-        "googleMapsApiKey": "YOUR_WEB_API_KEY"
-      }
-    }
-  }
-}
+### 환경 변수 설정
+
+1. 프로젝트 루트에 `.env` 파일 생성:
+```bash
+cp .env.example .env
 ```
+
+2. `.env` 파일에 API 키 입력:
+```
+EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_WEB_API_KEY
+```
+
+**중요**: `.env` 파일은 절대 Git에 커밋하지 마세요! (이미 .gitignore에 포함되어 있습니다)
 
 ## 5. 전체 app.json 예시
 

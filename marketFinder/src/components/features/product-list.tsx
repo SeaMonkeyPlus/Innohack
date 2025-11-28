@@ -15,6 +15,7 @@ interface ProductListProps {
   onBack: () => void;
   isMinimized: boolean;
   onToggleMinimize: () => void;
+  onProductPress?: (product: Product) => void;
 }
 
 export function ProductList({
@@ -23,12 +24,14 @@ export function ProductList({
   onBack,
   isMinimized,
   onToggleMinimize,
+  onProductPress,
 }: ProductListProps) {
   const renderProductCard = ({ item }: { item: Product }) => {
     return (
       <TouchableOpacity
         style={styles.card}
         activeOpacity={0.9}
+        onPress={() => onProductPress?.(item)}
       >
         <View style={styles.cardContent}>
           {item.images && item.images.length > 0 ? (

@@ -213,11 +213,6 @@ export default function RestaurantRegister() {
   // 검증 화면
   const renderVerificationScreen = () => (
     <View style={styles.verificationContainer}>
-      {/* Language Selector - Fixed at top left */}
-      <View style={styles.languageSelectorContainer}>
-        <LanguageSelector />
-      </View>
-
       <View style={styles.verificationBox}>
         <Text style={styles.verificationIcon}>🔐</Text>
         <Text style={styles.verificationTitle}>가게 등록 인증</Text>
@@ -489,11 +484,6 @@ export default function RestaurantRegister() {
 
   return (
     <View style={styles.container}>
-      {/* Language Selector - Fixed at top left */}
-      <View style={styles.languageSelectorContainer}>
-        <LanguageSelector />
-      </View>
-
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* 진행 상태 표시 */}
         <View style={styles.progressContainer}>
@@ -790,7 +780,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 10,
     flex: 1,
   },
   nextButtonText: {

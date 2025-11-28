@@ -1,3 +1,5 @@
+import { Market } from "../types/market";
+
 // 백엔드 API 기본 URL
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
@@ -10,19 +12,6 @@ export interface MarketApiResponse {
   lon: number;
 }
 
-// 프론트엔드 Market 타입
-export interface Market {
-  id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  rating?: number;
-  images?: string[];
-  phone?: string;
-  openingHours?: string;
-  shops: any[]; // Shop 타입 참조
-}
-
 /**
  * API 응답을 프론트엔드 Market 타입으로 변환
  */
@@ -30,8 +19,10 @@ const convertApiResponseToMarket = (apiMarket: MarketApiResponse): Market => {
   return {
     id: apiMarket.id.toString(),
     name: apiMarket.name,
+    address: "", // API에서 제공하지 않으므로 빈 문자열
     latitude: Number(apiMarket.lat),
     longitude: Number(apiMarket.lon),
+    category: "market", // API에서 제공하지 않으므로 기본값
     rating: undefined,
     images: [],
     phone: undefined,

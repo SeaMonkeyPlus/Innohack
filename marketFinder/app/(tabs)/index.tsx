@@ -388,6 +388,7 @@ export default function HomeScreen() {
             searchKeyword={searchKeyword}
             sharedHeight={sharedListHeight}
             onHeightChange={setSharedListHeight}
+            predictResult={predictResult}
           />
         )
       ) : null}

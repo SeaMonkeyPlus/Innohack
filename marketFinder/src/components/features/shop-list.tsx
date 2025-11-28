@@ -1,4 +1,4 @@
-import { fetchProductsByStoreId, Product } from "@/src/services/market-api";
+import { fetchProductsByStoreId, Product, PredictApiResponse } from "@/src/services/market-api";
 import { Shop } from "@/src/types/shop";
 import { useTranslation } from "@hooks/use-translation";
 import { getImageUrl } from "@/src/constants/images";
@@ -30,6 +30,7 @@ interface ShopListProps {
   searchKeyword?: string | null;
   sharedHeight: number | null;
   onHeightChange: (height: number) => void;
+  predictResult?: PredictApiResponse | null;
 }
 
 export function ShopList({
@@ -40,6 +41,7 @@ export function ShopList({
   searchKeyword,
   sharedHeight,
   onHeightChange,
+  predictResult,
 }: ShopListProps) {
   const { t } = useTranslation();
   const { selectedLanguage } = useLanguage();
@@ -322,6 +324,17 @@ export function ShopList({
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          predictResult?.explanation ? (
+            <View style={styles.explanationContainer}>
+              <View style={styles.explanationHeader}>
+                <Text style={styles.explanationIcon}>🔍</Text>
+                <Text style={styles.explanationTitle}>{predictResult.explanation.title}</Text>
+              </View>
+              <Text style={styles.explanationSummary}>{predictResult.explanation.summary}</Text>
+            </View>
+          ) : null
+        }
       />
     </Animated.View>
   );
@@ -625,5 +638,33 @@ const styles = StyleSheet.create({
   },
   productInfo: {
     flex: 1,
+  },
+  explanationContainer: {
+    backgroundColor: "#E8F5E9",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: "#4CAF50",
+  },
+  explanationHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  explanationIcon: {
+    fontSize: 24,
+    marginRight: 8,
+  },
+  explanationTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#2E7D32",
+    flex: 1,
+  },
+  explanationSummary: {
+    fontSize: 14,
+    color: "#1B5E20",
+    lineHeight: 20,
   },
 });

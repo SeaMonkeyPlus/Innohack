@@ -19,10 +19,10 @@ export function MapViewComponent({ markets, onMarkerPress, selectedMarketId }: M
   const { selectedLanguage } = useLanguage();
   const [mapKey, setMapKey] = useState(0);
 
-  // 기본 위치: 서울 중심부
+  // 기본 위치: 부산역
   const center = {
-    lat: 37.5665,
-    lng: 126.9780,
+    lat: 35.1156,
+    lng: 129.0403,
   };
 
   // 언어가 변경될 때마다 지도를 다시 로드

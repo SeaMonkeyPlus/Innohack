@@ -98,6 +98,19 @@ export function MapViewComponent({
 
   return (
     <View style={styles.container} key={selectedLanguage.code}>
+      <style>
+        {`
+          .market-label {
+            background: white !important;
+            padding: 4px 8px !important;
+            border-radius: 8px !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+            border: 2px solid #333 !important;
+            font-family: 'Arial', sans-serif !important;
+            white-space: nowrap !important;
+          }
+        `}
+      </style>
       <GoogleMap
         key={mapKey}
         mapContainerStyle={mapContainerStyle}
@@ -127,20 +140,32 @@ export function MapViewComponent({
             const lng = Number(market.longitude);
             return !isNaN(lat) && !isNaN(lng) && isFinite(lat) && isFinite(lng);
           })
-          .map((market) => (
-            <Marker
-              key={`market-${market.id}`}
-              position={{ lat: Number(market.latitude), lng: Number(market.longitude) }}
-              title={market.name}
-              onClick={() => onMarkerPress?.(market)}
-              icon={{
-                url:
-                  selectedMarketId === market.id
-                    ? "http://maps.google.com/mapfiles/ms/icons/brown.png"
-                    : "http://maps.google.com/mapfiles/ms/icons/red.png",
-              }}
-            />
-          ))}
+          .map((market) => {
+            const isSelected = selectedMarketId === market.id;
+            return (
+              <Marker
+                key={`market-${market.id}`}
+                position={{ lat: Number(market.latitude), lng: Number(market.longitude) }}
+                title={market.name}
+                onClick={() => onMarkerPress?.(market)}
+                label={{
+                  text: market.name,
+                  color: "#000000",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                  className: "market-label",
+                }}
+                icon={{
+                  url: isSelected
+                    ? "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                    : "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                  scaledSize: isSelected ? new google.maps.Size(56, 56) : new google.maps.Size(40, 40),
+                  labelOrigin: new google.maps.Point(20, -10),
+                }}
+                zIndex={isSelected ? 1000 : 1}
+              />
+            );
+          })}
 
         {shops
           .filter((shop) => {

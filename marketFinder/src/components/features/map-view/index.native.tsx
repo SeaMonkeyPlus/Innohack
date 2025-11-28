@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
-import { useLanguage } from '../../../contexts/language-context';
 
 interface MapViewComponentProps {
   initialRegion?: {
@@ -13,8 +12,6 @@ interface MapViewComponentProps {
 }
 
 export function MapViewComponent({ initialRegion }: MapViewComponentProps) {
-  const { selectedLanguage } = useLanguage();
-
   // 기본 위치: 서울
   const defaultRegion = {
     latitude: 37.5665,
@@ -28,7 +25,6 @@ export function MapViewComponent({ initialRegion }: MapViewComponentProps) {
   return (
     <View style={styles.container}>
       <MapView
-        key={selectedLanguage.code}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={region}

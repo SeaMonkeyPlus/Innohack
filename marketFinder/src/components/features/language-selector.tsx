@@ -142,9 +142,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 12,
     borderBottomWidth: 1,
+    backgroundColor: 'transparent',
   },
   selectedItem: {
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    backgroundColor: 'rgba(0, 122, 255, 0.15)',
   },
   flag: {
     fontSize: 24,

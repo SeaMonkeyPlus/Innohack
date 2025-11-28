@@ -1,15 +1,13 @@
-import { GoogleMap, useLoadScript } from '@react-google-maps/api';
+import { Market } from '@/src/types/market';
+import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useLanguage } from '../../../contexts/language-context';
 
 interface MapViewComponentProps {
-  initialRegion?: {
-    latitude: number;
-    longitude: number;
-    latitudeDelta: number;
-    longitudeDelta: number;
-  };
+  markets: Market[];
+  onMarkerPress?: (market: Market) => void;
+  selectedMarketId?: string;
 }
 
 const mapContainerStyle = {
@@ -17,23 +15,14 @@ const mapContainerStyle = {
   height: '100%',
 };
 
-export function MapViewComponent({ initialRegion }: MapViewComponentProps) {
+export function MapViewComponent({ markets, onMarkerPress, selectedMarketId }: MapViewComponentProps) {
   const { selectedLanguage } = useLanguage();
   const [mapKey, setMapKey] = useState(0);
 
-  // 기본 위치: 부산역
-  const defaultRegion = {
-    latitude: 35.1156,
-    longitude: 129.0403,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
-  };
-
-  const region = initialRegion || defaultRegion;
-
+  // 기본 위치: 서울 중심부
   const center = {
-    lat: region.latitude,
-    lng: region.longitude,
+    lat: 37.5665,
+    lng: 126.9780,
   };
 
   // 언어가 변경될 때마다 지도를 다시 로드
@@ -83,8 +72,30 @@ export function MapViewComponent({ initialRegion }: MapViewComponentProps) {
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: true,
+          disableDefaultUI: false,
+          styles: [
+            {
+              featureType: 'poi',
+              elementType: 'labels',
+              stylers: [{ visibility: 'off' }],
+            },
+          ],
         }}
-      />
+      >
+        {markets.map((market) => (
+          <Marker
+            key={market.id}
+            position={{ lat: market.latitude, lng: market.longitude }}
+            title={market.name}
+            onClick={() => onMarkerPress?.(market)}
+            icon={{
+              url: selectedMarketId === market.id
+                ? 'http://maps.google.com/mapfiles/ms/icons/brown.png'
+                : 'http://maps.google.com/mapfiles/ms/icons/red.png',
+            }}
+          />
+        ))}
+      </GoogleMap>
     </View>
   );
 }

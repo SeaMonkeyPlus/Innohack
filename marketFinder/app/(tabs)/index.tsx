@@ -1,6 +1,6 @@
 import { Market } from "@/src/types/market";
 import { useState } from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 
 import { LanguageSelector } from "@/src/components/features/language-selector";
 import { MarketVerticalList } from "@/src/components/features/market-vertical-list";
@@ -110,19 +110,11 @@ export default function HomeScreen() {
       </View>
 
       {/* Map - 웹과 네이티브 모두 표시 */}
-      {Platform.OS === "web" ? (
-        <View style={styles.mapPlaceholder}>
-          <Text style={styles.mapPlaceholderText}>🗺️</Text>
-          <Text style={styles.mapPlaceholderSubtext}>지도 보기</Text>
-          <Text style={styles.mapPlaceholderNote}>(웹에서는 Google Maps API 키가 필요합니다)</Text>
-        </View>
-      ) : (
-        <MapViewComponent
-          markets={sampleMarkets}
-          onMarkerPress={handleMarkerPress}
-          selectedMarketId={selectedMarketId}
-        />
-      )}
+      <MapViewComponent
+        markets={sampleMarkets}
+        onMarkerPress={handleMarkerPress}
+        selectedMarketId={selectedMarketId}
+      />
 
       {/* Market Vertical List - Fixed at bottom */}
       <MarketVerticalList

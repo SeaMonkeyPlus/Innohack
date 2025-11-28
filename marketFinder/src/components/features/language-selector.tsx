@@ -1,30 +1,25 @@
-import { DEFAULT_LANGUAGE, LANGUAGES } from '@constants/languages';
+import { LANGUAGES } from '@constants/languages';
 import { useColorScheme } from '@hooks/use-color-scheme';
 import React, { useState } from 'react';
 import {
-    Modal,
-    Pressable,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { Language } from '../../types/language';
+import { useLanguage } from '../../contexts/language-context';
 
-interface LanguageSelectorProps {
-  onLanguageChange?: (language: Language) => void;
-}
-
-export function LanguageSelector({ onLanguageChange }: LanguageSelectorProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>(DEFAULT_LANGUAGE);
+export function LanguageSelector() {
+  const { selectedLanguage, setLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const handleLanguageSelect = (language: Language) => {
-    setSelectedLanguage(language);
+  const handleLanguageSelect = (language: any) => {
+    setLanguage(language);
     setIsOpen(false);
-    onLanguageChange?.(language);
   };
 
   return (

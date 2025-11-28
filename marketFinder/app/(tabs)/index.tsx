@@ -35,6 +35,8 @@ const sampleMarkets: Market[] = [
         category: "간식",
         description: "바삭한 겉면과 달콤한 속이 일품인 호떡",
         images: ["https://images.unsplash.com/photo-1603105037880-880cd4edfb0d?w=800"],
+        latitude: 35.0988,
+        longitude: 129.0290,
       },
       {
         id: "1-2",
@@ -43,6 +45,8 @@ const sampleMarkets: Market[] = [
         rating: 4.6,
         category: "식사",
         description: "매콤달콤한 양념이 일품인 당면 요리",
+        latitude: 35.0984,
+        longitude: 129.0294,
       },
       {
         id: "1-3",
@@ -51,6 +55,8 @@ const sampleMarkets: Market[] = [
         rating: 4.7,
         category: "간식",
         description: "달콤한 꿀이 가득한 떡",
+        latitude: 35.0987,
+        longitude: 129.0291,
       },
       {
         id: "1-4",
@@ -59,6 +65,8 @@ const sampleMarkets: Market[] = [
         rating: 4.5,
         category: "간식",
         description: "부산 특산 어묵",
+        latitude: 35.0985,
+        longitude: 129.0293,
       },
     ],
   },
@@ -83,6 +91,8 @@ const sampleMarkets: Market[] = [
         category: "회",
         description: "싱싱한 광어 한 마리",
         images: ["https://images.unsplash.com/photo-1544025162-d76694265947?w=800"],
+        latitude: 35.0968,
+        longitude: 129.0304,
       },
       {
         id: "2-2",
@@ -91,6 +101,8 @@ const sampleMarkets: Market[] = [
         rating: 4.7,
         category: "구이",
         description: "고소한 고등어 구이",
+        latitude: 35.0964,
+        longitude: 129.0308,
       },
       {
         id: "2-3",
@@ -99,6 +111,8 @@ const sampleMarkets: Market[] = [
         rating: 4.8,
         category: "탕",
         description: "시원한 국물의 해물탕",
+        latitude: 35.0967,
+        longitude: 129.0305,
       },
       {
         id: "2-4",
@@ -107,6 +121,8 @@ const sampleMarkets: Market[] = [
         rating: 4.6,
         category: "반찬",
         description: "매콤새콤한 꼬막 무침",
+        latitude: 35.0965,
+        longitude: 129.0307,
       },
       {
         id: "2-5",
@@ -115,6 +131,8 @@ const sampleMarkets: Market[] = [
         rating: 4.4,
         category: "해산물",
         description: "신선한 멍게",
+        latitude: 35.0966,
+        longitude: 129.0309,
       },
     ],
   },
@@ -139,6 +157,8 @@ const sampleMarkets: Market[] = [
         category: "간식",
         description: "매콤달콤한 닭꼬치",
         images: ["https://images.unsplash.com/photo-1588561387991-c4368fc48626?w=800"],
+        latitude: 35.0995,
+        longitude: 129.0315,
       },
       {
         id: "3-2",
@@ -147,6 +167,8 @@ const sampleMarkets: Market[] = [
         rating: 4.6,
         category: "간식",
         description: "매콤한 떡볶이",
+        latitude: 35.0991,
+        longitude: 129.0319,
       },
       {
         id: "3-3",
@@ -155,6 +177,8 @@ const sampleMarkets: Market[] = [
         rating: 4.4,
         category: "간식",
         description: "바삭한 모둠 튀김",
+        latitude: 35.0994,
+        longitude: 129.0316,
       },
       {
         id: "3-4",
@@ -163,6 +187,8 @@ const sampleMarkets: Market[] = [
         rating: 4.5,
         category: "간식",
         description: "찹쌀 순대",
+        latitude: 35.0992,
+        longitude: 129.0318,
       },
     ],
   },
@@ -187,6 +213,8 @@ const sampleMarkets: Market[] = [
         category: "식사",
         description: "진한 국물의 돼지국밥",
         images: ["https://images.unsplash.com/photo-1585032226651-759b368d7246?w=800"],
+        latitude: 35.1388,
+        longitude: 129.0560,
       },
       {
         id: "4-2",
@@ -195,6 +223,8 @@ const sampleMarkets: Market[] = [
         rating: 4.5,
         category: "식사",
         description: "시원한 밀면",
+        latitude: 35.1384,
+        longitude: 129.0564,
       },
       {
         id: "4-3",
@@ -203,6 +233,8 @@ const sampleMarkets: Market[] = [
         rating: 4.3,
         category: "반찬",
         description: "바삭한 야채전",
+        latitude: 35.1387,
+        longitude: 129.0561,
       },
     ],
   },
@@ -227,6 +259,8 @@ const sampleMarkets: Market[] = [
         category: "디저트",
         description: "예술가의 손맛이 담긴 쿠키",
         images: ["https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=800"],
+        latitude: 35.0774,
+        longitude: 129.0471,
       },
       {
         id: "5-2",
@@ -235,6 +269,8 @@ const sampleMarkets: Market[] = [
         rating: 4.5,
         category: "잼",
         description: "신선한 과일로 만든 수제 잼",
+        latitude: 35.0770,
+        longitude: 129.0475,
       },
       {
         id: "5-3",
@@ -243,6 +279,8 @@ const sampleMarkets: Market[] = [
         rating: 4.7,
         category: "음료",
         description: "예술적인 라떼 아트",
+        latitude: 35.0773,
+        longitude: 129.0472,
       },
     ],
   },
@@ -250,7 +288,7 @@ const sampleMarkets: Market[] = [
 
 export default function HomeScreen() {
   const [selectedMarketId, setSelectedMarketId] = useState<string | undefined>(undefined);
-  const [focusedMarket, setFocusedMarket] = useState<Market | null>(null);
+  const [focusedLocation, setFocusedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isListMinimized, setIsListMinimized] = useState(false);
   const [viewMode, setViewMode] = useState<"markets" | "products">("markets");
 
@@ -261,14 +299,20 @@ export default function HomeScreen() {
 
   const handleMarketPress = (market: Market) => {
     setSelectedMarketId(market.id);
-    setFocusedMarket(market);
+    setFocusedLocation({ latitude: market.latitude, longitude: market.longitude });
     setViewMode("products");
     setIsListMinimized(false);
   };
 
+  const handleProductPress = (product: any) => {
+    if (product.latitude && product.longitude) {
+      setFocusedLocation({ latitude: product.latitude, longitude: product.longitude });
+    }
+  };
+
   const handleBackToMarkets = () => {
     setViewMode("markets");
-    setFocusedMarket(null);
+    setFocusedLocation(null);
     setIsListMinimized(false);
   };
 
@@ -290,7 +334,7 @@ export default function HomeScreen() {
         markets={sampleMarkets}
         onMarkerPress={handleMarkerPress}
         selectedMarketId={selectedMarketId}
-        focusedMarket={focusedMarket}
+        focusedLocation={focusedLocation}
       />
 
       {/* List - Market List or Product List */}
@@ -309,6 +353,7 @@ export default function HomeScreen() {
           onBack={handleBackToMarkets}
           isMinimized={isListMinimized}
           onToggleMinimize={handleToggleMinimize}
+          onProductPress={handleProductPress}
         />
       ) : null}
     </View>

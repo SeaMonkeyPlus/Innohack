@@ -8,7 +8,7 @@ interface MapViewComponentProps {
   markets: Market[];
   onMarkerPress?: (market: Market) => void;
   selectedMarketId?: string;
-  focusedMarket?: Market | null;
+  focusedLocation?: { latitude: number; longitude: number } | null;
 }
 
 const mapContainerStyle = {
@@ -16,7 +16,7 @@ const mapContainerStyle = {
   height: '100%',
 };
 
-export function MapViewComponent({ markets, onMarkerPress, selectedMarketId, focusedMarket }: MapViewComponentProps) {
+export function MapViewComponent({ markets, onMarkerPress, selectedMarketId, focusedLocation }: MapViewComponentProps) {
   const { selectedLanguage } = useLanguage();
   const [mapKey, setMapKey] = useState(0);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -27,20 +27,20 @@ export function MapViewComponent({ markets, onMarkerPress, selectedMarketId, foc
     lng: 129.0403,
   });
 
-  // focusedMarket이 변경되면 지도 이동
+  // focusedLocation이 변경되면 지도 이동
   useEffect(() => {
-    if (focusedMarket && mapRef.current) {
+    if (focusedLocation && mapRef.current) {
       // 리스트가 하단 40%를 가리므로, 마커를 보이는 영역(상단 60%)의 중앙에 놓기 위해
       // 위도를 약간 위로 보정
       const latitudeOffset = 0.002;
       const newCenter = {
-        lat: focusedMarket.latitude + latitudeOffset,
-        lng: focusedMarket.longitude,
+        lat: focusedLocation.latitude + latitudeOffset,
+        lng: focusedLocation.longitude,
       };
       mapRef.current.panTo(newCenter);
       mapRef.current.setZoom(16);
     }
-  }, [focusedMarket]);
+  }, [focusedLocation]);
 
   // 언어가 변경될 때마다 지도를 다시 로드
   useEffect(() => {

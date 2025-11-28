@@ -6,4 +6,6 @@ export interface Product {
   description?: string;
   images?: string[];
   category?: string;
+  latitude?: number;
+  longitude?: number;
 }

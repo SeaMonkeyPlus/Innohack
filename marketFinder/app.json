@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.marketfinder.app",
+      "config": {
+        "googleMapsApiKey": "AIzaSyAGCnfUSFootIPkZVh1pKTyGksxk58en58"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +23,13 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.marketfinder.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAGCnfUSFootIPkZVh1pKTyGksxk58en58"
+        }
+      }
     },
     "web": {
       "output": "static",
@@ -27,6 +37,20 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "카메라 권한이 필요합니다.",
+          "microphonePermission": "마이크 권한이 필요합니다.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "react-native-maps",
+        {
+          "enableGoogleMaps": "true"
+        }
+      ],
       [
         "expo-splash-screen",
         {

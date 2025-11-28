@@ -1,61 +1,105 @@
+import { Market } from "@/src/types/market";
 import { useState } from "react";
-import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 
 import { LanguageSelector } from "@/src/components/features/language-selector";
-import RestaurantDetail from "@/src/components/features/restaurant-detail";
-import { Restaurant } from "@/src/types/restaurant";
+import { MarketVerticalList } from "@/src/components/features/market-vertical-list";
 
 // 플랫폼별로 Map 컴포넌트 import
 const MapViewComponent =
-  Platform.OS === "web" ? require("@/src/components/features/map-view/index.web").MapViewComponent : null;
+  Platform.OS === "web"
+    ? require("@/src/components/features/map-view/index.web").MapViewComponent
+    : require("@/src/components/features/map-view/index.native").MapViewComponent;
 
-// 예제 음식점 데이터
-const sampleRestaurants: Restaurant[] = [
+// 부산 전통시장 샘플 데이터
+const sampleMarkets: Market[] = [
   {
     id: "1",
-    name: "맛있는 한식당",
-    phone: "02-1234-5678",
-    address: "서울특별시 강남구 테헤란로 123",
-    description: "정성스럽게 만든 전통 한식을 제공하는 가족 운영 식당입니다.",
-    category: "한식",
+    name: "국제시장",
+    address: "부산광역시 중구 신창동4가 14-1",
+    description: "부산의 대표적인 전통시장으로 다양한 먹거리와 물건들이 가득합니다.",
+    latitude: 35.0986,
+    longitude: 129.0292,
+    category: "전통시장",
     rating: 4.5,
-    images: [
-      "https://images.unsplash.com/photo-1579027989536-b7b1f875659b?w=800",
-      "https://images.unsplash.com/photo-1580554530778-ca36943938b2?w=800",
-    ],
-    menuItems: [
-      { id: "1", name: "김치찌개", price: 9000, description: "매콤하고 시원한 국물 맛" },
-      { id: "2", name: "된장찌개", price: 8000, description: "구수한 된장 찌개" },
-      { id: "3", name: "불고기", price: 15000, description: "부드러운 불고기" },
-    ],
+    images: ["https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800"],
+    phone: "051-245-7389",
+    openingHours: "09:00 - 20:00",
   },
   {
     id: "2",
-    name: "이탈리안 레스토랑",
-    phone: "02-2345-6789",
-    address: "서울특별시 강남구 역삼동 456",
-    description: "정통 이탈리안 요리를 선보입니다.",
-    category: "양식",
-    rating: 4.7,
-    images: ["https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800"],
-    menuItems: [
-      { id: "1", name: "까르보나라", price: 18000, description: "크림 파스타" },
-      { id: "2", name: "마르게리타 피자", price: 22000, description: "클래식 피자" },
-    ],
+    name: "자갈치시장",
+    address: "부산광역시 중구 자갈치해안로 52",
+    description: "한국 최대의 수산물 시장으로 싱싱한 해산물과 회를 맛볼 수 있습니다.",
+    latitude: 35.0966,
+    longitude: 129.0306,
+    category: "전통시장",
+    rating: 4.6,
+    images: ["https://images.unsplash.com/photo-1534777410147-54lost78309e?w=800"],
+    phone: "051-713-8000",
+    openingHours: "05:00 - 22:00",
+  },
+  {
+    id: "3",
+    name: "부평깡통시장",
+    address: "부산광역시 중구 부평1길 36",
+    description: "야시장으로 유명하며 다양한 길거리 음식을 즐길 수 있습니다.",
+    latitude: 35.0993,
+    longitude: 129.0317,
+    category: "전통시장",
+    rating: 4.4,
+    images: ["https://images.unsplash.com/photo-1533900298318-6b8da08a523e?w=800"],
+    phone: "051-245-6594",
+    openingHours: "10:00 - 23:00",
+  },
+  {
+    id: "4",
+    name: "범일시장",
+    address: "부산광역시 동구 범일로 130",
+    description: "부산의 전통과 문화가 살아있는 재래시장입니다.",
+    latitude: 35.1386,
+    longitude: 129.0562,
+    category: "전통시장",
+    rating: 4.2,
+    images: ["https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=800"],
+    phone: "051-634-3984",
+    openingHours: "07:00 - 20:00",
+  },
+  {
+    id: "5",
+    name: "깡깡이예술마을시장",
+    address: "부산광역시 영도구 절영로 203",
+    description: "예술과 전통이 어우러진 독특한 분위기의 시장입니다.",
+    latitude: 35.0772,
+    longitude: 129.0473,
+    category: "전통시장",
+    rating: 4.3,
+    images: ["https://images.unsplash.com/photo-1542838132-92c53300491e?w=800"],
+    phone: "051-418-1863",
+    openingHours: "10:00 - 19:00",
   },
 ];
 
 export default function HomeScreen() {
-  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedMarketId, setSelectedMarketId] = useState<string | undefined>(undefined);
+  const [isListMinimized, setIsListMinimized] = useState(false);
 
-  const handleRestaurantSelect = (restaurant: Restaurant) => {
-    setSelectedRestaurant(restaurant);
-    setShowDetailModal(true);
+  const handleMarkerPress = (market: Market) => {
+    setSelectedMarketId(market.id);
+    setIsListMinimized(false); // 마커 클릭시 리스트 열기
   };
 
-  const closeModal = () => {
-    setShowDetailModal(false);
+  const handleMarketPress = (market: Market) => {
+    setSelectedMarketId(market.id);
+  };
+
+  const handleMarketDetailPress = (market: Market) => {
+    // TODO: 상세 정보 모달 열기
+    console.log("상세 정보:", market.name);
+  };
+
+  const handleToggleMinimize = () => {
+    setIsListMinimized(!isListMinimized);
   };
 
   return (
@@ -65,45 +109,22 @@ export default function HomeScreen() {
         <LanguageSelector />
       </View>
 
-      {/* Map - Web에서만 표시, 모바일에서는 플레이스홀더 */}
-      {Platform.OS === "web" && MapViewComponent ? (
-        <MapViewComponent />
-      ) : (
-        <View style={styles.mapPlaceholder}>
-          <Text style={styles.mapPlaceholderText}>🗺️</Text>
-          <Text style={styles.mapPlaceholderSubtext}>지도 보기</Text>
-          <Text style={styles.mapPlaceholderNote}>(개발 빌드에서 활성화됩니다)</Text>
-          <Text style={styles.mapPlaceholderInfo}>카메라 탭에서 촬영 기능을 테스트하세요!</Text>
-        </View>
-      )}
+      {/* Map - 웹과 네이티브 모두 표시 */}
+      <MapViewComponent
+        markets={sampleMarkets}
+        onMarkerPress={handleMarkerPress}
+        selectedMarketId={selectedMarketId}
+      />
 
-      {/* Restaurant List Button - Fixed at bottom */}
-      <View style={styles.restaurantListContainer}>
-        <Text style={styles.listTitle}>주변 음식점</Text>
-        {sampleRestaurants.map((restaurant) => (
-          <TouchableOpacity
-            key={restaurant.id}
-            style={styles.restaurantCard}
-            onPress={() => handleRestaurantSelect(restaurant)}
-          >
-            <View style={styles.restaurantInfo}>
-              <Text style={styles.restaurantName}>{restaurant.name}</Text>
-              <Text style={styles.restaurantCategory}>{restaurant.category}</Text>
-              <Text style={styles.restaurantRating}>⭐ {restaurant.rating}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Restaurant Detail Modal */}
-      <Modal visible={showDetailModal} animationType="slide" onRequestClose={closeModal}>
-        <View style={styles.modalContainer}>
-          <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-            <Text style={styles.closeButtonText}>✕ 닫기</Text>
-          </TouchableOpacity>
-          {selectedRestaurant && <RestaurantDetail restaurant={selectedRestaurant} />}
-        </View>
-      </Modal>
+      {/* Market Vertical List - Fixed at bottom */}
+      <MarketVerticalList
+        markets={sampleMarkets}
+        selectedMarketId={selectedMarketId}
+        onMarketPress={handleMarketPress}
+        onMarketDetailPress={handleMarketDetailPress}
+        isMinimized={isListMinimized}
+        onToggleMinimize={handleToggleMinimize}
+      />
     </View>
   );
 }
@@ -133,12 +154,6 @@ const styles = StyleSheet.create({
   mapPlaceholderNote: {
     fontSize: 14,
     color: "#666",
-    marginBottom: 20,
-  },
-  mapPlaceholderInfo: {
-    fontSize: 16,
-    color: "#4CAF50",
-    fontWeight: "600",
     textAlign: "center",
   },
   languageSelectorContainer: {
@@ -146,71 +161,5 @@ const styles = StyleSheet.create({
     top: 50,
     left: 16,
     zIndex: 1000,
-  },
-  restaurantListContainer: {
-    position: "absolute",
-    bottom: 20,
-    left: 16,
-    right: 16,
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    maxHeight: 200,
-  },
-  listTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 12,
-    color: "#333",
-  },
-  restaurantCard: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  restaurantInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  restaurantName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    flex: 1,
-  },
-  restaurantCategory: {
-    fontSize: 14,
-    color: "#666",
-    marginLeft: 8,
-  },
-  restaurantRating: {
-    fontSize: 14,
-    color: "#FFA500",
-    marginLeft: 8,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "white",
-  },
-  closeButton: {
-    position: "absolute",
-    top: 50,
-    right: 16,
-    zIndex: 1000,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  closeButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
   },
 });

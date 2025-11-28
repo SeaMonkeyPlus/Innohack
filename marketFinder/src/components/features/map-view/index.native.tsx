@@ -1,17 +1,15 @@
+import { Market } from '@/src/types/market';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 interface MapViewComponentProps {
-  initialRegion?: {
-    latitude: number;
-    longitude: number;
-    latitudeDelta: number;
-    longitudeDelta: number;
-  };
+  markets: Market[];
+  onMarkerPress?: (market: Market) => void;
+  selectedMarketId?: string;
 }
 
-export function MapViewComponent({ initialRegion }: MapViewComponentProps) {
+export function MapViewComponent({ markets, onMarkerPress, selectedMarketId }: MapViewComponentProps) {
   // 기본 위치: 부산역
   const defaultRegion = {
     latitude: 35.1156,
@@ -20,20 +18,36 @@ export function MapViewComponent({ initialRegion }: MapViewComponentProps) {
     longitudeDelta: 0.0421,
   };
 
-  const region = initialRegion || defaultRegion;
-
   return (
     <View style={styles.container}>
       <MapView
         provider={PROVIDER_GOOGLE}
         style={styles.map}
-        initialRegion={region}
-        showsUserLocation
-        showsMyLocationButton
-        showsCompass
-        showsScale
+        initialRegion={defaultRegion}
+        showsUserLocation={false}
+        showsMyLocationButton={false}
+        showsCompass={false}
+        showsScale={false}
+        showsBuildings={false}
+        showsTraffic={false}
+        showsIndoors={false}
+        showsPointsOfInterests={false}
         mapType="standard"
-      />
+        toolbarEnabled={false}
+      >
+        {markets.map((market) => (
+          <Marker
+            key={market.id}
+            coordinate={{
+              latitude: market.latitude,
+              longitude: market.longitude,
+            }}
+            title={market.name}
+            onPress={() => onMarkerPress?.(market)}
+            pinColor={selectedMarketId === market.id ? '#8B4513' : '#FF6B6B'}
+          />
+        ))}
+      </MapView>
     </View>
   );
 }

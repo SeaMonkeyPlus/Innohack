@@ -1,12 +1,12 @@
 import { Market } from '@/src/types/market';
 import React from 'react';
 import {
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 interface MarketVerticalListProps {
@@ -14,6 +14,8 @@ interface MarketVerticalListProps {
   selectedMarketId?: string;
   onMarketPress: (market: Market) => void;
   onMarketDetailPress?: (market: Market) => void;
+  isMinimized: boolean;
+  onToggleMinimize: () => void;
 }
 
 export function MarketVerticalList({
@@ -21,6 +23,8 @@ export function MarketVerticalList({
   selectedMarketId,
   onMarketPress,
   onMarketDetailPress,
+  isMinimized,
+  onToggleMinimize,
 }: MarketVerticalListProps) {
   const renderMarketCard = ({ item }: { item: Market }) => {
     const isSelected = selectedMarketId === item.id;
@@ -81,18 +85,24 @@ export function MarketVerticalList({
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>주변 전통시장</Text>
-        <Text style={styles.headerCount}>{markets.length}개</Text>
-      </View>
-      <FlatList
-        data={markets}
-        renderItem={renderMarketCard}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-      />
+    <View style={[styles.container, isMinimized && styles.containerMinimized]}>
+      <TouchableOpacity style={styles.header} onPress={onToggleMinimize} activeOpacity={0.8}>
+        <View style={styles.dragHandle} />
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>주변 전통시장</Text>
+          <Text style={styles.headerCount}>{markets.length}개</Text>
+        </View>
+        <Text style={styles.toggleIcon}>{isMinimized ? '▲' : '▼'}</Text>
+      </TouchableOpacity>
+      {!isMinimized && (
+        <FlatList
+          data={markets}
+          renderItem={renderMarketCard}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
+      )}
     </View>
   );
 }
@@ -113,15 +123,28 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 10,
   },
+  containerMinimized: {
+    height: 80,
+  },
   header: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  dragHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#ddd',
+    borderRadius: 2,
+    marginBottom: 12,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    width: '100%',
   },
   headerTitle: {
     fontSize: 20,
@@ -135,6 +158,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
+  },
+  toggleIcon: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 8,
   },
   listContent: {
     padding: 16,

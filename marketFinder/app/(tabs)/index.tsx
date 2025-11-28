@@ -82,9 +82,11 @@ const sampleMarkets: Market[] = [
 
 export default function HomeScreen() {
   const [selectedMarketId, setSelectedMarketId] = useState<string | undefined>(undefined);
+  const [isListMinimized, setIsListMinimized] = useState(false);
 
   const handleMarkerPress = (market: Market) => {
     setSelectedMarketId(market.id);
+    setIsListMinimized(false); // 마커 클릭시 리스트 열기
   };
 
   const handleMarketPress = (market: Market) => {
@@ -94,6 +96,10 @@ export default function HomeScreen() {
   const handleMarketDetailPress = (market: Market) => {
     // TODO: 상세 정보 모달 열기
     console.log("상세 정보:", market.name);
+  };
+
+  const handleToggleMinimize = () => {
+    setIsListMinimized(!isListMinimized);
   };
 
   return (
@@ -124,6 +130,8 @@ export default function HomeScreen() {
         selectedMarketId={selectedMarketId}
         onMarketPress={handleMarketPress}
         onMarketDetailPress={handleMarketDetailPress}
+        isMinimized={isListMinimized}
+        onToggleMinimize={handleToggleMinimize}
       />
     </View>
   );

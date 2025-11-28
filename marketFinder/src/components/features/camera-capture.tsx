@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { useSearch } from "../../contexts/search-context";
 import { useLanguage } from "../../contexts/language-context";
+import { useTranslation } from "@hooks/use-translation";
 import { predictFoodImage } from "../../services/market-api";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -28,6 +29,7 @@ interface CropArea {
 
 export default function CameraCapture() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { setSearchData, selectedMarketId } = useSearch();
   const { selectedLanguage } = useLanguage();
   const [facing, setFacing] = useState<CameraType>("back");
@@ -196,7 +198,7 @@ export default function CameraCapture() {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#4CAF50" />
-        <Text style={styles.permissionText}>카메라를 초기화하는 중...</Text>
+        <Text style={styles.permissionText}>{t.camera.initializing}</Text>
       </View>
     );
   }
@@ -205,9 +207,9 @@ export default function CameraCapture() {
     return (
       <View style={styles.container}>
         <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>카메라 권한이 필요합니다</Text>
+          <Text style={styles.permissionText}>{t.camera.permissionRequired}</Text>
           <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-            <Text style={styles.permissionButtonText}>권한 허용</Text>
+            <Text style={styles.permissionButtonText}>{t.camera.allowPermission}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -220,10 +222,10 @@ export default function CameraCapture() {
       <View style={styles.container}>
         <View style={styles.permissionContainer}>
           <Text style={styles.noMarketIcon}>📍</Text>
-          <Text style={styles.permissionText}>시장을 먼저 선택해주세요</Text>
-          <Text style={styles.noMarketSubText}>홈 화면에서 시장을 선택한 후{"\n"}카메라를 사용할 수 있습니다</Text>
+          <Text style={styles.permissionText}>{t.camera.selectMarket}</Text>
+          <Text style={styles.noMarketSubText}>{t.camera.selectMarketHint}</Text>
           <TouchableOpacity style={styles.permissionButton} onPress={() => router.push("/(tabs)")}>
-            <Text style={styles.permissionButtonText}>홈으로 이동</Text>
+            <Text style={styles.permissionButtonText}>{t.camera.goHome}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -233,7 +235,7 @@ export default function CameraCapture() {
   // 사진 촬영
   const takePicture = async () => {
     if (!cameraRef.current) {
-      Alert.alert("오류", "카메라가 준비되지 않았습니다.");
+      Alert.alert(t.common.error, t.camera.cameraNotReady);
       return;
     }
 
@@ -246,11 +248,11 @@ export default function CameraCapture() {
         setCapturedImage(photo.uri);
         setIsSelecting(true);
       } else {
-        Alert.alert("오류", "사진 촬영에 실패했습니다.");
+        Alert.alert(t.common.error, t.camera.photoFailed);
       }
     } catch (error) {
       console.error("사진 촬영 오류:", error);
-      Alert.alert("오류", "사진 촬영에 실패했습니다. 다시 시도해주세요.");
+      Alert.alert(t.common.error, t.camera.photoFailed);
     } finally {
       setIsLoading(false);
     }
@@ -314,7 +316,7 @@ export default function CameraCapture() {
             height: SCREEN_HEIGHT * 0.4,
           });
         } else {
-          Alert.alert("알림", "해당 음식을 판매하는 가게를 찾을 수 없습니다.");
+          Alert.alert(t.common.error, t.camera.noShopsFound);
           setIsLoading(false);
         }
       }
@@ -324,7 +326,7 @@ export default function CameraCapture() {
         console.log("분석이 취소되었습니다");
       } else {
         console.error("전송 오류:", error);
-        Alert.alert("오류", "이미지 분석에 실패했습니다. 다시 시도해주세요.");
+        Alert.alert(t.common.error, t.camera.analysisFailed);
         setIsLoading(false);
       }
     } finally {
@@ -389,7 +391,7 @@ export default function CameraCapture() {
         >
           {/* 중앙 영역 - 드래그하면 이동 */}
           <View style={styles.cropCenter} {...centerPanResponder.panHandlers}>
-            <Text style={styles.cropHint}>드래그하여 이동</Text>
+            <Text style={styles.cropHint}>{t.camera.dragToMove}</Text>
           </View>
 
           {/* 네 모서리 핸들 - 드래그하면 크기 조절 */}
@@ -405,9 +407,9 @@ export default function CameraCapture() {
         <View style={styles.loadingOverlay}>
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#4CAF50" />
-            <Text style={styles.loadingText}>AI 분석중</Text>
+            <Text style={styles.loadingText}>{t.camera.analyzing}</Text>
             <TouchableOpacity style={styles.cancelButton} onPress={cancelAnalysis}>
-              <Text style={styles.cancelButtonText}>취소</Text>
+              <Text style={styles.cancelButtonText}>{t.common.cancel}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -416,14 +418,14 @@ export default function CameraCapture() {
       {/* 하단 버튼 */}
       <View style={styles.controlBar}>
         <TouchableOpacity style={styles.controlButton} onPress={retakePicture} disabled={isLoading}>
-          <Text style={styles.controlButtonText}>다시 찍기</Text>
+          <Text style={styles.controlButtonText}>{t.common.retake}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.controlButton, styles.confirmButton]}
           onPress={confirmCrop}
           disabled={isLoading}
         >
-          <Text style={[styles.controlButtonText, styles.confirmButtonText]}>확인</Text>
+          <Text style={[styles.controlButtonText, styles.confirmButtonText]}>{t.common.confirm}</Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -51,7 +51,7 @@ const convertApiResponseToMarket = (apiMarket: MarketApiResponse): Market => {
  * @param langCode - 언어 코드 (예: 'ko', 'en', 'ja', 'zh')
  * @returns Market 배열
  */
-export const fetchMarkets = async (langCode: string = 'en'): Promise<Market[]> => {
+export const fetchMarkets = async (langCode: string = "en"): Promise<Market[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/markets?lang_code=${langCode}`, {
       method: "GET",
@@ -132,7 +132,6 @@ const convertApiResponseToShop = (apiStore: StoreApiResponse): Shop => {
     rating: apiStore.rating || 0,
     description: apiStore.summary || undefined,
     images: apiStore.image_url ? [apiStore.image_url] : [],
-    category: "음식점",
     latitude: Number(apiStore.lat),
     longitude: Number(apiStore.lon),
     phone: undefined,
@@ -146,7 +145,7 @@ const convertApiResponseToShop = (apiStore: StoreApiResponse): Shop => {
  * @param langCode - 언어 코드 (예: 'ko', 'en', 'ja', 'zh')
  * @returns Shop 배열
  */
-export const fetchStoresByMarketId = async (marketId: string, langCode: string = 'en'): Promise<Shop[]> => {
+export const fetchStoresByMarketId = async (marketId: string, langCode: string = "en"): Promise<Shop[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/markets/${marketId}/stores?lang_code=${langCode}`, {
       method: "GET",
@@ -160,6 +159,7 @@ export const fetchStoresByMarketId = async (marketId: string, langCode: string =
     }
 
     const data: StoreApiResponse[] = await response.json();
+    console.log(data);
 
     // API 응답 데이터를 Shop 배열로 변환
     const shops: Shop[] = data.map(convertApiResponseToShop);
@@ -214,7 +214,7 @@ const convertApiResponseToProduct = (apiProduct: ProductApiResponse): Product =>
  * @param langCode - 언어 코드 (예: 'ko', 'en', 'ja', 'zh')
  * @returns Product 배열
  */
-export const fetchProductsByStoreId = async (storeId: string, langCode: string = 'en'): Promise<Product[]> => {
+export const fetchProductsByStoreId = async (storeId: string, langCode: string = "en"): Promise<Product[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/stores/${storeId}/products?lang_code=${langCode}`, {
       method: "GET",

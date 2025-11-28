@@ -1,14 +1,7 @@
-import { Market } from '@/src/types/market';
-import React from 'react';
-import {
-    Dimensions,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Market } from "@/src/types/market";
+import { useTranslation } from "@hooks/use-translation";
+import React from "react";
+import { Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface MarketHorizontalListProps {
   markets: Market[];
@@ -17,7 +10,7 @@ interface MarketHorizontalListProps {
   onMarketDetailPress?: (market: Market) => void;
 }
 
-const CARD_WIDTH = Dimensions.get('window').width * 0.75;
+const CARD_WIDTH = Dimensions.get("window").width * 0.75;
 const CARD_SPACING = 12;
 
 export function MarketHorizontalList({
@@ -26,6 +19,8 @@ export function MarketHorizontalList({
   onMarketPress,
   onMarketDetailPress,
 }: MarketHorizontalListProps) {
+  const { t } = useTranslation();
+
   const renderMarketCard = ({ item }: { item: Market }) => {
     const isSelected = selectedMarketId === item.id;
 
@@ -70,11 +65,8 @@ export function MarketHorizontalList({
           )}
 
           {onMarketDetailPress && (
-            <TouchableOpacity
-              style={styles.detailButton}
-              onPress={() => onMarketDetailPress(item)}
-            >
-              <Text style={styles.detailButtonText}>자세히 보기</Text>
+            <TouchableOpacity style={styles.detailButton} onPress={() => onMarketDetailPress(item)}>
+              <Text style={styles.detailButtonText}>{t.market.viewDetails}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -101,44 +93,44 @@ export function MarketHorizontalList({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     height: 220,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   listContent: {
-    paddingHorizontal: (Dimensions.get('window').width - CARD_WIDTH) / 2,
+    paddingHorizontal: (Dimensions.get("window").width - CARD_WIDTH) / 2,
     paddingVertical: 12,
   },
   card: {
     width: CARD_WIDTH,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 16,
     marginRight: CARD_SPACING,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 5,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   cardSelected: {
     borderWidth: 3,
-    borderColor: '#8B4513',
+    borderColor: "#8B4513",
   },
   cardImage: {
-    width: '100%',
+    width: "100%",
     height: 100,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
   },
   cardImagePlaceholder: {
-    width: '100%',
+    width: "100%",
     height: 100,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
   },
   placeholderText: {
     fontSize: 48,
@@ -148,54 +140,54 @@ const styles = StyleSheet.create({
   },
   marketName: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 6,
   },
   infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 6,
   },
   category: {
     fontSize: 14,
-    color: '#666',
-    backgroundColor: '#f5f5f5',
+    color: "#666",
+    backgroundColor: "#f5f5f5",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
   },
   ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   rating: {
     fontSize: 14,
-    color: '#FFA500',
-    fontWeight: '600',
+    color: "#FFA500",
+    fontWeight: "600",
   },
   address: {
     fontSize: 13,
-    color: '#666',
+    color: "#666",
     marginBottom: 6,
   },
   description: {
     fontSize: 13,
-    color: '#888',
+    color: "#888",
     lineHeight: 18,
     marginBottom: 8,
   },
   detailButton: {
-    backgroundColor: '#FF6B6B',
+    backgroundColor: "#FF6B6B",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   detailButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

@@ -1,13 +1,20 @@
 import { Market } from "@/src/types/market";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import * as Location from "expo-location";
+
+const SCREEN_HEIGHT = Dimensions.get("window").height;
+const MIN_HEIGHT = SCREEN_HEIGHT * 0.1;
 
 import { LanguageSelector } from "@/src/components/features/language-selector";
 import { MarketList } from "@/src/components/features/market-list";
 import { ShopList } from "@/src/components/features/shop-list";
 import { useLanguage } from "@/src/contexts/language-context";
 import { useSearch } from "@/src/contexts/search-context";
+import { useTranslation } from "@hooks/use-translation";
 import { fetchMarkets, fetchStoresByMarketId, Shop } from "@/src/services/market-api";
+import { calculateDistance } from "@/src/utils/distance";
+import React from "react";
 
 // 플랫폼별로 Map 컴포넌트 import
 let MapViewComponent: React.ComponentType<any>;
@@ -18,15 +25,19 @@ try {
       : require("@/src/components/features/map-view/index.native").MapViewComponent;
 } catch (error) {
   // Fallback for when native maps are not available
-  MapViewComponent = () => (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#e0e0e0" }}>
-      <Text style={{ fontSize: 16, color: "#666" }}>지도를 불러올 수 없습니다</Text>
-      <Text style={{ fontSize: 14, color: "#888", marginTop: 8 }}>웹 버전을 사용해주세요</Text>
-    </View>
-  );
+  MapViewComponent = () => {
+    const { t } = useTranslation();
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#e0e0e0" }}>
+        <Text style={{ fontSize: 16, color: "#666" }}>{t.market.mapLoadFailed}</Text>
+        <Text style={{ fontSize: 14, color: "#888", marginTop: 8 }}>{t.market.useWeb}</Text>
+      </View>
+    );
+  };
 }
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const { selectedLanguage } = useLanguage();
   const {
     searchKeyword,
@@ -44,6 +55,36 @@ export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingShops, setIsLoadingShops] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  // 사용자 현재 위치 가져오기
+  useEffect(() => {
+    const getUserLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          console.log("Location permission not granted");
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({});
+        const userPos = {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        };
+        setUserLocation(userPos);
+
+        // 앱 시작 시 사용자 위치를 중심으로 설정
+        if (!focusedLocation) {
+          setFocusedLocation(userPos);
+        }
+      } catch (error) {
+        console.error("Failed to get user location:", error);
+      }
+    };
+
+    getUserLocation();
+  }, []);
 
   // API에서 시장 데이터 가져오기
   useEffect(() => {
@@ -55,7 +96,7 @@ export default function HomeScreen() {
         setMarkets(data);
       } catch (err) {
         console.error("Failed to load markets:", err);
-        setError("시장 정보를 불러오는데 실패했습니다.");
+        setError(t.market.loadFailed);
       } finally {
         setIsLoading(false);
       }
@@ -109,7 +150,6 @@ export default function HomeScreen() {
         rating: 0,
         description: `${shop.menu_name} - ${shop.menu_price.toLocaleString()}원`,
         images: [],
-        category: "음식점",
         latitude: Number(shop.lat),
         longitude: Number(shop.lon),
         phone: undefined,
@@ -194,25 +234,57 @@ export default function HomeScreen() {
 
   const selectedMarket = markets.find((m) => m.id === selectedMarketId);
 
-  // 검색 키워드가 있으면 해당 키워드를 포함하는 가게만 필터링
-  const filteredShops = shops.filter((shop) => {
-    if (!searchKeyword) return true;
+  // 사용자 위치 기준으로 시장을 가까운 순서로 정렬
+  const sortedMarkets = React.useMemo(() => {
+    if (!userLocation) return markets;
 
-    // 가게 이름, 카테고리, 설명에서 검색 키워드 포함 여부 확인
-    const keyword = searchKeyword.toLowerCase();
-    const matchesName = shop.name.toLowerCase().includes(keyword);
-    const matchesCategory = shop.category?.toLowerCase().includes(keyword);
-    const matchesDescription = shop.description?.toLowerCase().includes(keyword);
+    return [...markets].sort((a, b) => {
+      const distanceA = calculateDistance(userLocation.latitude, userLocation.longitude, a.latitude, a.longitude);
+      const distanceB = calculateDistance(userLocation.latitude, userLocation.longitude, b.latitude, b.longitude);
+      return distanceA - distanceB;
+    });
+  }, [markets, userLocation]);
 
-    return matchesName || matchesCategory || matchesDescription;
-  });
+  // 내 위치로 이동 핸들러
+  const handleGoToMyLocation = () => {
+    if (userLocation) {
+      setFocusedLocation(userLocation);
+    }
+  };
+
+  // 검색 키워드가 있으면 해당 키워드를 포함하는 가게만 필터링하고, 내 위치와 가까운 순으로 정렬
+  const filteredShops = React.useMemo(() => {
+    // 먼저 검색 키워드로 필터링
+    let filtered = shops.filter((shop) => {
+      if (!searchKeyword) return true;
+
+      // 가게 이름, 카테고리, 설명에서 검색 키워드 포함 여부 확인
+      const keyword = searchKeyword.toLowerCase();
+      const matchesName = shop.name.toLowerCase().includes(keyword);
+      const matchesCategory = shop.category?.toLowerCase().includes(keyword);
+      const matchesDescription = shop.description?.toLowerCase().includes(keyword);
+
+      return matchesName || matchesCategory || matchesDescription;
+    });
+
+    // 사용자 위치가 있으면 거리 기준으로 정렬
+    if (userLocation && filtered.length > 0) {
+      filtered = [...filtered].sort((a, b) => {
+        const distanceA = calculateDistance(userLocation.latitude, userLocation.longitude, a.latitude, a.longitude);
+        const distanceB = calculateDistance(userLocation.latitude, userLocation.longitude, b.latitude, b.longitude);
+        return distanceA - distanceB;
+      });
+    }
+
+    return filtered;
+  }, [shops, searchKeyword, userLocation]);
 
   // 로딩 중일 때
   if (isLoading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color="#8B4513" />
-        <Text style={styles.loadingText}>시장 정보를 불러오는 중...</Text>
+        <Text style={styles.loadingText}>{t.market.loadingMarkets}</Text>
       </View>
     );
   }
@@ -232,12 +304,12 @@ export default function HomeScreen() {
               .then(setMarkets)
               .catch((err) => {
                 console.error("Failed to load markets:", err);
-                setError("시장 정보를 불러오는데 실패했습니다.");
+                setError(t.market.loadFailed);
               })
               .finally(() => setIsLoading(false));
           }}
         >
-          <Text style={styles.retryButtonText}>다시 시도</Text>
+          <Text style={styles.retryButtonText}>{t.market.retry}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -254,23 +326,38 @@ export default function HomeScreen() {
       {selectedMarket && viewMode === "shops" && (
         <TouchableOpacity style={styles.selectedMarketBadge} onPress={handleChangeMarket} activeOpacity={0.8}>
           <Text style={styles.selectedMarketText}>{selectedMarket.name}</Text>
-          <Text style={styles.changeButtonText}>변경</Text>
+          <Text style={styles.changeButtonText}>{t.market.change}</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* 내 위치로 이동 버튼 - 시장 변경 버튼 아래 */}
+      {userLocation && (
+        <TouchableOpacity
+          style={[
+            styles.myLocationButton,
+            viewMode === "shops" ? styles.myLocationButtonWithMarket : styles.myLocationButtonNoMarket,
+          ]}
+          onPress={handleGoToMyLocation}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.myLocationIcon}>📍</Text>
         </TouchableOpacity>
       )}
 
       {/* Map */}
       <MapViewComponent
-        markets={markets}
-        shops={viewMode === "shops" ? shops : []}
+        markets={viewMode === "shops" ? [] : markets}
+        shops={viewMode === "shops" ? filteredShops : []}
         onMarkerPress={handleMarkerPress}
         selectedMarketId={selectedMarketId}
         focusedLocation={focusedLocation}
+        userLocation={userLocation}
       />
 
       {/* List - Market List or Shop List */}
       {viewMode === "markets" ? (
         <MarketList
-          markets={markets}
+          markets={sortedMarkets}
           selectedMarketId={selectedMarketId}
           onMarketPress={handleMarketPress}
           onSelectMarket={handleSelectMarket}
@@ -281,12 +368,16 @@ export default function HomeScreen() {
         isLoadingShops ? (
           <View style={[styles.container, styles.centerContent]}>
             <ActivityIndicator size="large" color="#8B4513" />
-            <Text style={styles.loadingText}>가게 정보를 불러오는 중...</Text>
+            <Text style={styles.loadingText}>{t.market.loadingShops}</Text>
           </View>
         ) : (
           <ShopList
             shops={filteredShops}
-            marketName={searchKeyword ? `${selectedMarket.name} - "${searchKeyword}" 검색 결과` : selectedMarket.name}
+            marketName={
+              searchKeyword
+                ? `${selectedMarket.name} - "${searchKeyword}" ${t.market.searchResults}`
+                : selectedMarket.name
+            }
             onBack={handleBackToMarkets}
             onShopPress={handleShopPress}
             searchKeyword={searchKeyword}
@@ -370,5 +461,30 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  myLocationButton: {
+    position: "absolute",
+    right: 16,
+    zIndex: 1001,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#4285F4",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  myLocationButtonWithMarket: {
+    top: 110,
+  },
+  myLocationButtonNoMarket: {
+    top: 50,
+  },
+  myLocationIcon: {
+    fontSize: 28,
   },
 });

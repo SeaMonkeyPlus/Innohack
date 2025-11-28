@@ -1,4 +1,5 @@
 import { Market } from "@/src/types/market";
+import { useTranslation } from "@hooks/use-translation";
 import React, { useRef, useState } from "react";
 import {
   Animated,
@@ -33,6 +34,7 @@ export function MarketList({
   sharedHeight,
   onHeightChange,
 }: MarketListProps) {
+  const { t } = useTranslation();
   const [expandedMarketId, setExpandedMarketId] = useState<string | null>(null);
   const initialHeight = sharedHeight || MIN_HEIGHT;
   const [currentHeight, setCurrentHeight] = useState(initialHeight);
@@ -155,7 +157,9 @@ export function MarketList({
             }}
             activeOpacity={0.8}
           >
-            <Text style={[styles.selectButtonText, isSelected && styles.selectButtonTextSelected]}>선택하기</Text>
+            <Text style={[styles.selectButtonText, isSelected && styles.selectButtonTextSelected]}>
+              {t.market.selectMarket}
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -167,8 +171,11 @@ export function MarketList({
       <View style={styles.header} {...panResponder.panHandlers}>
         <View style={styles.dragHandle} />
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>부산 전통시장</Text>
-          <Text style={styles.headerCount}>{markets.length}개</Text>
+          <Text style={styles.headerTitle}>{t.market.title}</Text>
+          <Text style={styles.headerCount}>
+            {markets.length}
+            {t.common.count}
+          </Text>
         </View>
       </View>
       <FlatList

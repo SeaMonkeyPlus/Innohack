@@ -1,5 +1,6 @@
 import { fetchProductsByStoreId, Product } from "@/src/services/market-api";
 import { Shop } from "@/src/types/shop";
+import { useTranslation } from "@hooks/use-translation";
 import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -39,6 +40,7 @@ export function ShopList({
   sharedHeight,
   onHeightChange,
 }: ShopListProps) {
+  const { t } = useTranslation();
   const { selectedLanguage } = useLanguage();
   const [expandedShopId, setExpandedShopId] = useState<string | null>(null);
   const [products, setProducts] = useState<Record<string, Product[]>>({});
@@ -191,7 +193,7 @@ export function ShopList({
             {/* Full Description */}
             {item.description && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>📋 상세 설명</Text>
+                <Text style={styles.detailLabel}>📋 {t.shop.description}</Text>
                 <Text style={styles.detailText}>{item.description}</Text>
               </View>
             )}
@@ -199,7 +201,7 @@ export function ShopList({
             {/* Full Address */}
             {item.address && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>📍 주소</Text>
+                <Text style={styles.detailLabel}>📍 {t.shop.address}</Text>
                 <Text style={styles.detailText}>{item.address}</Text>
               </View>
             )}
@@ -207,7 +209,7 @@ export function ShopList({
             {/* Opening Hours */}
             {item.openingHours && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>🕐 영업시간</Text>
+                <Text style={styles.detailLabel}>🕐 {t.shop.openingHours}</Text>
                 <Text style={styles.detailText}>{item.openingHours}</Text>
               </View>
             )}
@@ -215,7 +217,7 @@ export function ShopList({
             {/* Phone */}
             {item.phone && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>📞 전화번호</Text>
+                <Text style={styles.detailLabel}>📞 {t.shop.phone}</Text>
                 <TouchableOpacity onPress={() => handlePhonePress(item.phone!)}>
                   <Text style={[styles.detailText, styles.phoneLink]}>{item.phone}</Text>
                 </TouchableOpacity>
@@ -224,7 +226,7 @@ export function ShopList({
 
             {/* Rating Detail */}
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>⭐ 평점</Text>
+              <Text style={styles.detailLabel}>⭐ {t.shop.rating}</Text>
               <View style={styles.ratingDetail}>
                 <Text style={styles.ratingDetailText}>{item.rating.toFixed(1)} / 5.0</Text>
                 <View style={styles.starContainer}>
@@ -240,18 +242,18 @@ export function ShopList({
             {/* Category */}
             {item.category && (
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>🏷️ 카테고리</Text>
+                <Text style={styles.detailLabel}>🏷️ {t.shop.category}</Text>
                 <Text style={styles.detailText}>{item.category}</Text>
               </View>
             )}
 
             {/* Products/Menu */}
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>🍽️ 판매 상품</Text>
+              <Text style={styles.detailLabel}>🍽️ {t.shop.products}</Text>
               {loadingProducts[item.id] ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="small" color="#4CAF50" />
-                  <Text style={styles.loadingText}>상품 정보를 불러오는 중...</Text>
+                  <Text style={styles.loadingText}>{t.shop.loading}</Text>
                 </View>
               ) : products[item.id] && products[item.id].length > 0 ? (
                 <View style={styles.menuContainer}>
@@ -264,7 +266,10 @@ export function ShopList({
                         <View style={styles.productInfo}>
                           <View style={styles.menuItemHeader}>
                             <Text style={styles.menuItemName}>{product.name}</Text>
-                            <Text style={styles.menuItemPrice}>{product.price.toLocaleString()}원</Text>
+                            <Text style={styles.menuItemPrice}>
+                              {product.price.toLocaleString()}
+                              {t.common.won}
+                            </Text>
                           </View>
                           {product.description && <Text style={styles.menuItemDescription}>{product.description}</Text>}
                         </View>
@@ -273,12 +278,12 @@ export function ShopList({
                   ))}
                 </View>
               ) : (
-                <Text style={styles.noProductsText}>등록된 상품이 없습니다</Text>
+                <Text style={styles.noProductsText}>{t.shop.noProducts}</Text>
               )}
             </View>
 
             <TouchableOpacity style={styles.collapseButton} onPress={() => setExpandedShopId(null)}>
-              <Text style={styles.collapseButtonText}>접기 ▲</Text>
+              <Text style={styles.collapseButtonText}>{t.shop.collapse} ▲</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -299,15 +304,19 @@ export function ShopList({
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>{marketName}</Text>
             <Text style={styles.headerCount}>
-              {shops.length}개 가게{searchKeyword ? ` (${searchKeyword})` : ""}
+              {shops.length}
+              {t.shop.count}
+              {searchKeyword ? ` (${searchKeyword})` : ""}
             </Text>
           </View>
         </View>
       </View>
       {searchKeyword && shops.length === 0 && (
         <View style={styles.noResultsContainer}>
-          <Text style={styles.noResultsText}>"{searchKeyword}" 검색 결과가 없습니다</Text>
-          <Text style={styles.noResultsSubtext}>다른 시장을 선택하거나 다시 촬영해보세요</Text>
+          <Text style={styles.noResultsText}>
+            "{searchKeyword}" {t.market.noResults}
+          </Text>
+          <Text style={styles.noResultsSubtext}>{t.market.tryAgain}</Text>
         </View>
       )}
       <FlatList

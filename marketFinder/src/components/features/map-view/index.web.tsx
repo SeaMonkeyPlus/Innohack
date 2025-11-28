@@ -18,6 +18,7 @@ interface MapViewComponentProps {
   onMarkerPress?: (market: Market) => void;
   selectedMarketId?: string;
   focusedLocation?: { latitude: number; longitude: number } | null;
+  userLocation?: { latitude: number; longitude: number } | null;
 }
 
 const mapContainerStyle = {
@@ -31,16 +32,38 @@ export function MapViewComponent({
   onMarkerPress,
   selectedMarketId,
   focusedLocation,
+  userLocation,
 }: MapViewComponentProps) {
   const { selectedLanguage } = useLanguage();
   const [mapKey, setMapKey] = useState(0);
   const mapRef = useRef<google.maps.Map | null>(null);
 
-  // 기본 위치: 부산역
-  const [center, setCenter] = useState({
-    lat: 35.1156,
-    lng: 129.0403,
-  });
+  // 초기 위치: 사용자 위치 또는 focusedLocation 또는 부산역
+  const getInitialCenter = () => {
+    const location = userLocation || focusedLocation;
+    if (location) {
+      return {
+        lat: location.latitude,
+        lng: location.longitude,
+      };
+    }
+    return {
+      lat: 35.1156,
+      lng: 129.0403,
+    };
+  };
+
+  const [center, setCenter] = useState(getInitialCenter());
+
+  // userLocation이 변경되면 center 업데이트
+  useEffect(() => {
+    if (userLocation) {
+      setCenter({
+        lat: userLocation.latitude,
+        lng: userLocation.longitude,
+      });
+    }
+  }, [userLocation]);
 
   // focusedLocation이 변경되면 지도 이동
   useEffect(() => {
@@ -183,6 +206,23 @@ export function MapViewComponent({
               }}
             />
           ))}
+
+        {/* 사용자 위치 마커 */}
+        {userLocation && (
+          <Marker
+            position={{ lat: userLocation.latitude, lng: userLocation.longitude }}
+            title="My Location"
+            icon={{
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 10,
+              fillColor: "#4285F4",
+              fillOpacity: 1,
+              strokeColor: "#FFFFFF",
+              strokeWeight: 3,
+            }}
+            zIndex={999}
+          />
+        )}
       </GoogleMap>
     </View>
   );

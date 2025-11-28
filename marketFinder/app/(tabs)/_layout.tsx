@@ -5,9 +5,11 @@ import { HapticTab } from "@components/common/haptic-tab";
 import { IconSymbol } from "@components/ui/icon-symbol";
 import { Colors } from "@constants/theme";
 import { useColorScheme } from "@hooks/use-color-scheme";
+import { useTranslation } from "@hooks/use-translation";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -21,21 +23,21 @@ export default function TabLayout() {
       <Tabs.Screen
         name="camera"
         options={{
-          title: "촬영",
+          title: t.tabs.camera,
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="camera.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="index"
         options={{
-          title: "홈",
+          title: t.tabs.home,
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: "등록",
+          title: t.tabs.register,
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus.circle.fill" color={color} />,
         }}
       />

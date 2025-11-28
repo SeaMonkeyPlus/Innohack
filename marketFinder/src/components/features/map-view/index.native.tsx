@@ -5,20 +5,41 @@ import MapView, { Marker, PROVIDER_GOOGLE, Region } from "react-native-maps";
 
 interface MapViewComponentProps {
   markets: Market[];
+  shops?: any[];
   onMarkerPress?: (market: Market) => void;
   selectedMarketId?: string;
   focusedLocation?: { latitude: number; longitude: number } | null;
+  userLocation?: { latitude: number; longitude: number } | null;
 }
 
-export function MapViewComponent({ markets, onMarkerPress, selectedMarketId, focusedLocation }: MapViewComponentProps) {
+export function MapViewComponent({
+  markets,
+  shops = [],
+  onMarkerPress,
+  selectedMarketId,
+  focusedLocation,
+  userLocation,
+}: MapViewComponentProps) {
   const mapRef = useRef<MapView>(null);
 
-  // 기본 위치: 부산역
-  const defaultRegion: Region = {
-    latitude: 35.1156,
-    longitude: 129.0403,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
+  // 초기 위치: 사용자 위치 또는 focusedLocation 또는 부산역
+  const getInitialRegion = (): Region => {
+    const location = userLocation || focusedLocation;
+    if (location) {
+      return {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      };
+    }
+    // 기본 위치: 부산역
+    return {
+      latitude: 35.1156,
+      longitude: 129.0403,
+      latitudeDelta: 0.0922,
+      longitudeDelta: 0.0421,
+    };
   };
 
   // focusedLocation이 변경되면 지도 이동
@@ -45,7 +66,7 @@ export function MapViewComponent({ markets, onMarkerPress, selectedMarketId, foc
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
-        initialRegion={defaultRegion}
+        initialRegion={getInitialRegion()}
         showsUserLocation={false}
         showsMyLocationButton={false}
         showsCompass={false}
@@ -57,6 +78,25 @@ export function MapViewComponent({ markets, onMarkerPress, selectedMarketId, foc
         mapType="standard"
         toolbarEnabled={false}
       >
+        {/* 사용자 위치 마커 */}
+        {userLocation && (
+          <Marker
+            coordinate={{
+              latitude: userLocation.latitude,
+              longitude: userLocation.longitude,
+            }}
+            title="My Location"
+            zIndex={999}
+          >
+            <View style={styles.userMarkerContainer}>
+              <View style={styles.userMarkerOuter}>
+                <View style={styles.userMarkerInner} />
+              </View>
+            </View>
+          </Marker>
+        )}
+
+        {/* 시장 마커 */}
         {markets.map((market) => {
           const isSelected = selectedMarketId === market.id;
           return (
@@ -146,5 +186,27 @@ const styles = StyleSheet.create({
   },
   markerEmoji: {
     fontSize: 24,
+  },
+  userMarkerContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  userMarkerOuter: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(66, 133, 244, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#4285F4",
+  },
+  userMarkerInner: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#4285F4",
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
   },
 });

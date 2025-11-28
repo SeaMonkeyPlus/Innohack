@@ -1,6 +1,6 @@
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
-import { useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -14,6 +14,8 @@ import {
   View,
 } from "react-native";
 import { useSearch } from "../../contexts/search-context";
+import { useLanguage } from "../../contexts/language-context";
+import { predictFoodImage } from "../../services/market-api";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -26,7 +28,8 @@ interface CropArea {
 
 export default function CameraCapture() {
   const router = useRouter();
-  const { setSearchData } = useSearch();
+  const { setSearchData, selectedMarketId } = useSearch();
+  const { selectedLanguage } = useLanguage();
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -40,32 +43,146 @@ export default function CameraCapture() {
   const [isLoading, setIsLoading] = useState(false);
 
   const cameraRef = useRef<CameraView>(null);
-  const pan = useRef(new Animated.ValueXY()).current;
-  const size = useRef(new Animated.ValueXY({ x: cropArea.width, y: cropArea.height })).current;
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // 드래그 핸들러 (영역 이동) - 항상 같은 순서로 Hook 호출
-  const panResponder = useRef(
+  // cropArea의 최신 값을 항상 참조하기 위한 ref
+  const cropAreaRef = useRef(cropArea);
+
+  // cropArea가 변경될 때마다 ref 업데이트
+  useEffect(() => {
+    cropAreaRef.current = cropArea;
+  }, [cropArea]);
+
+  // 화면 포커스될 때마다 상태 초기화
+  useFocusEffect(
+    useCallback(() => {
+      // 화면 포커스 시 상태 초기화
+      setIsLoading(false);
+      setCapturedImage(null);
+      setIsSelecting(false);
+
+      return () => {
+        // 화면을 떠날 때 정리
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+      };
+    }, [])
+  );
+
+  // 드래그 시작 위치 저장
+  const dragStart = useRef({ x: 0, y: 0, cropX: 0, cropY: 0, cropWidth: 0, cropHeight: 0 });
+
+  // 중앙 영역 드래그 핸들러 (위치 이동)
+  const centerPanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: (_, gesture) => {
+        const current = cropAreaRef.current;
+        dragStart.current = {
+          x: gesture.x0,
+          y: gesture.y0,
+          cropX: current.x,
+          cropY: current.y,
+          cropWidth: current.width,
+          cropHeight: current.height,
+        };
+      },
       onPanResponderMove: (_, gesture) => {
-        const newX = Math.max(0, Math.min(SCREEN_WIDTH - cropArea.width, gesture.moveX - cropArea.width / 2));
-        const newY = Math.max(0, Math.min(SCREEN_HEIGHT - cropArea.height, gesture.moveY - cropArea.height / 2));
+        const deltaX = gesture.moveX - dragStart.current.x;
+        const deltaY = gesture.moveY - dragStart.current.y;
+        const newX = Math.max(
+          0,
+          Math.min(SCREEN_WIDTH - dragStart.current.cropWidth, dragStart.current.cropX + deltaX)
+        );
+        const newY = Math.max(
+          0,
+          Math.min(SCREEN_HEIGHT - dragStart.current.cropHeight, dragStart.current.cropY + deltaY)
+        );
         setCropArea((prev) => ({ ...prev, x: newX, y: newY }));
       },
     })
   ).current;
 
-  // 크기 조절 핸들러
-  const resizeResponder = useRef(
-    PanResponder.create({
+  // 모서리 리사이즈 핸들러 생성 함수
+  const createCornerResponder = (corner: "tl" | "tr" | "bl" | "br") => {
+    return PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gesture) => {
-        const newWidth = Math.max(100, Math.min(SCREEN_WIDTH - cropArea.x, gesture.moveX - cropArea.x));
-        const newHeight = Math.max(100, Math.min(SCREEN_HEIGHT - cropArea.y, gesture.moveY - cropArea.y));
-        setCropArea((prev) => ({ ...prev, width: newWidth, height: newHeight }));
+      onPanResponderGrant: (_, gesture) => {
+        const current = cropAreaRef.current;
+        dragStart.current = {
+          x: gesture.x0,
+          y: gesture.y0,
+          cropX: current.x,
+          cropY: current.y,
+          cropWidth: current.width,
+          cropHeight: current.height,
+        };
       },
-    })
-  ).current;
+      onPanResponderMove: (_, gesture) => {
+        const deltaX = gesture.moveX - dragStart.current.x;
+        const deltaY = gesture.moveY - dragStart.current.y;
+
+        let newX = dragStart.current.cropX;
+        let newY = dragStart.current.cropY;
+        let newWidth = dragStart.current.cropWidth;
+        let newHeight = dragStart.current.cropHeight;
+
+        if (corner === "tl") {
+          // 좌상단
+          newX = Math.max(
+            0,
+            Math.min(dragStart.current.cropX + dragStart.current.cropWidth - 100, dragStart.current.cropX + deltaX)
+          );
+          newY = Math.max(
+            0,
+            Math.min(dragStart.current.cropY + dragStart.current.cropHeight - 100, dragStart.current.cropY + deltaY)
+          );
+          newWidth = dragStart.current.cropWidth - (newX - dragStart.current.cropX);
+          newHeight = dragStart.current.cropHeight - (newY - dragStart.current.cropY);
+        } else if (corner === "tr") {
+          // 우상단
+          newY = Math.max(
+            0,
+            Math.min(dragStart.current.cropY + dragStart.current.cropHeight - 100, dragStart.current.cropY + deltaY)
+          );
+          newWidth = Math.max(
+            100,
+            Math.min(SCREEN_WIDTH - dragStart.current.cropX, dragStart.current.cropWidth + deltaX)
+          );
+          newHeight = dragStart.current.cropHeight - (newY - dragStart.current.cropY);
+        } else if (corner === "bl") {
+          // 좌하단
+          newX = Math.max(
+            0,
+            Math.min(dragStart.current.cropX + dragStart.current.cropWidth - 100, dragStart.current.cropX + deltaX)
+          );
+          newWidth = dragStart.current.cropWidth - (newX - dragStart.current.cropX);
+          newHeight = Math.max(
+            100,
+            Math.min(SCREEN_HEIGHT - dragStart.current.cropY, dragStart.current.cropHeight + deltaY)
+          );
+        } else if (corner === "br") {
+          // 우하단
+          newWidth = Math.max(
+            100,
+            Math.min(SCREEN_WIDTH - dragStart.current.cropX, dragStart.current.cropWidth + deltaX)
+          );
+          newHeight = Math.max(
+            100,
+            Math.min(SCREEN_HEIGHT - dragStart.current.cropY, dragStart.current.cropHeight + deltaY)
+          );
+        }
+
+        setCropArea({ x: newX, y: newY, width: newWidth, height: newHeight });
+      },
+    });
+  };
+
+  const tlResponder = useRef(createCornerResponder("tl")).current;
+  const trResponder = useRef(createCornerResponder("tr")).current;
+  const blResponder = useRef(createCornerResponder("bl")).current;
+  const brResponder = useRef(createCornerResponder("br")).current;
 
   // 권한 자동 요청 - 모든 Hook 다음에 배치
   useEffect(() => {
@@ -91,6 +208,22 @@ export default function CameraCapture() {
           <Text style={styles.permissionText}>카메라 권한이 필요합니다</Text>
           <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
             <Text style={styles.permissionButtonText}>권한 허용</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // 시장 선택 확인
+  if (!selectedMarketId) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.noMarketIcon}>📍</Text>
+          <Text style={styles.permissionText}>시장을 먼저 선택해주세요</Text>
+          <Text style={styles.noMarketSubText}>홈 화면에서 시장을 선택한 후{"\n"}카메라를 사용할 수 있습니다</Text>
+          <TouchableOpacity style={styles.permissionButton} onPress={() => router.push("/(tabs)")}>
+            <Text style={styles.permissionButtonText}>홈으로 이동</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -140,50 +273,62 @@ export default function CameraCapture() {
     });
   };
 
+  // 분석 취소
+  const cancelAnalysis = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+  };
+
   // 영역 선택 완료
   const confirmCrop = async () => {
     if (!capturedImage) return;
 
+    // 새 AbortController 생성
+    abortControllerRef.current = new AbortController();
+
     try {
-      // ============================================
-      // 백엔드 API 연동 (주석 처리)
-      // ============================================
-      // import { analyzeImage } from "../../services/restaurant-api";
-      //
-      // // 이미지 분석 API 호출
-      // const result = await analyzeImage(capturedImage, {
-      //   x: cropArea.x,
-      //   y: cropArea.y,
-      //   width: cropArea.width,
-      //   height: cropArea.height,
-      // });
-      //
-      // if (result.success && result.detectedItem) {
-      //   // 분석 성공 - 검색 데이터 저장 및 홈 탭으로 이동
-      //   setSearchData(result.detectedItem, capturedImage);
-      //   router.push("/(tabs)");
-      // } else {
-      //   Alert.alert("알림", result.message || "관련 정보를 찾을 수 없습니다.");
-      // }
+      setIsLoading(true);
 
-      // 현재: 더미 데이터로 테스트 (호떡으로 가정)
-      setSearchData("호떡", capturedImage);
+      // 이미지 분석 API 호출
+      const result = await predictFoodImage(capturedImage, selectedLanguage.code, selectedMarketId);
 
-      // 홈 탭으로 이동
-      router.push("/(tabs)");
+      // 취소되지 않았다면 결과 처리
+      if (!abortControllerRef.current.signal.aborted) {
+        if (result && result.chosen_label && result.shops && result.shops.length > 0) {
+          // 분석 성공 - 검색 결과와 설명 데이터 저장 및 홈 탭으로 이동
+          setSearchData(result.chosen_label, capturedImage, result);
 
-      // 초기화
-      setCapturedImage(null);
-      setIsSelecting(false);
-      setCropArea({
-        x: SCREEN_WIDTH * 0.1,
-        y: SCREEN_HEIGHT * 0.2,
-        width: SCREEN_WIDTH * 0.8,
-        height: SCREEN_HEIGHT * 0.4,
-      });
-    } catch (error) {
-      console.error("전송 오류:", error);
-      Alert.alert("오류", "이미지 분석에 실패했습니다. 다시 시도해주세요.");
+          // 홈 탭으로 이동
+          router.push("/(tabs)");
+
+          // 초기화
+          setCapturedImage(null);
+          setIsSelecting(false);
+          setCropArea({
+            x: SCREEN_WIDTH * 0.1,
+            y: SCREEN_HEIGHT * 0.2,
+            width: SCREEN_WIDTH * 0.8,
+            height: SCREEN_HEIGHT * 0.4,
+          });
+        } else {
+          Alert.alert("알림", "해당 음식을 판매하는 가게를 찾을 수 없습니다.");
+          setIsLoading(false);
+        }
+      }
+    } catch (error: any) {
+      if (error.name === "AbortError" || abortControllerRef.current?.signal.aborted) {
+        // 취소된 경우 아무것도 하지 않음
+        console.log("분석이 취소되었습니다");
+      } else {
+        console.error("전송 오류:", error);
+        Alert.alert("오류", "이미지 분석에 실패했습니다. 다시 시도해주세요.");
+        setIsLoading(false);
+      }
+    } finally {
+      abortControllerRef.current = null;
     }
   };
 
@@ -230,7 +375,7 @@ export default function CameraCapture() {
         </View>
         <View style={[styles.overlayBottom, { flex: 1 }]} />
 
-        {/* 선택 영역 박스 */}
+        {/* 선택 영역 박스 - 중앙 영역 (이동용) */}
         <View
           style={[
             styles.cropBox,
@@ -241,25 +386,43 @@ export default function CameraCapture() {
               height: cropArea.height,
             },
           ]}
-          {...panResponder.panHandlers}
         >
-          <View style={styles.cropCorner} />
-          <View style={[styles.cropCorner, styles.cropCornerTopRight]} />
-          <View style={[styles.cropCorner, styles.cropCornerBottomLeft]} />
-          <View style={[styles.cropCorner, styles.cropCornerBottomRight]} {...resizeResponder.panHandlers}>
-            <View style={styles.resizeHandle} />
+          {/* 중앙 영역 - 드래그하면 이동 */}
+          <View style={styles.cropCenter} {...centerPanResponder.panHandlers}>
+            <Text style={styles.cropHint}>드래그하여 이동</Text>
           </View>
 
-          <Text style={styles.cropHint}>영역을 드래그하여 이동</Text>
+          {/* 네 모서리 핸들 - 드래그하면 크기 조절 */}
+          <View style={[styles.cornerHandle, styles.cornerTL]} {...tlResponder.panHandlers} />
+          <View style={[styles.cornerHandle, styles.cornerTR]} {...trResponder.panHandlers} />
+          <View style={[styles.cornerHandle, styles.cornerBL]} {...blResponder.panHandlers} />
+          <View style={[styles.cornerHandle, styles.cornerBR]} {...brResponder.panHandlers} />
         </View>
       </View>
 
+      {/* 로딩 오버레이 */}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4CAF50" />
+            <Text style={styles.loadingText}>AI 분석중</Text>
+            <TouchableOpacity style={styles.cancelButton} onPress={cancelAnalysis}>
+              <Text style={styles.cancelButtonText}>취소</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* 하단 버튼 */}
       <View style={styles.controlBar}>
-        <TouchableOpacity style={styles.controlButton} onPress={retakePicture}>
+        <TouchableOpacity style={styles.controlButton} onPress={retakePicture} disabled={isLoading}>
           <Text style={styles.controlButtonText}>다시 찍기</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.controlButton, styles.confirmButton]} onPress={confirmCrop}>
+        <TouchableOpacity
+          style={[styles.controlButton, styles.confirmButton]}
+          onPress={confirmCrop}
+          disabled={isLoading}
+        >
           <Text style={[styles.controlButtonText, styles.confirmButtonText]}>확인</Text>
         </TouchableOpacity>
       </View>
@@ -444,5 +607,77 @@ const styles = StyleSheet.create({
   },
   confirmButtonText: {
     fontWeight: "bold",
+  },
+  noMarketIcon: {
+    fontSize: 64,
+    marginBottom: 20,
+  },
+  noMarketSubText: {
+    fontSize: 14,
+    color: "#ccc",
+    textAlign: "center",
+    marginBottom: 30,
+    lineHeight: 20,
+  },
+  cropCenter: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cornerHandle: {
+    position: "absolute",
+    width: 40,
+    height: 40,
+    backgroundColor: "#4CAF50",
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: "#fff",
+  },
+  cornerTL: {
+    top: -20,
+    left: -20,
+  },
+  cornerTR: {
+    top: -20,
+    right: -20,
+  },
+  cornerBL: {
+    bottom: -20,
+    left: -20,
+  },
+  cornerBR: {
+    bottom: -20,
+    right: -20,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  loadingContainer: {
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 20,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#fff",
+    letterSpacing: 1,
+  },
+  cancelButton: {
+    marginTop: 30,
+    paddingHorizontal: 40,
+    paddingVertical: 12,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.5)",
+  },
+  cancelButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

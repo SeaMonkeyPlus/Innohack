@@ -7,7 +7,7 @@ export interface MarketApiResponse {
   created_at: string;
   name: string;
   lat: number;
-  long: number;
+  lon: number;
 }
 
 // 프론트엔드 Market 타입
@@ -36,7 +36,7 @@ const convertApiResponseToMarket = (apiMarket: MarketApiResponse): Market => {
     address: "부산광역시", // API에서 주소 정보가 없으므로 기본값 설정
     description: `${apiMarket.name}에 오신 것을 환영합니다.`,
     latitude: Number(apiMarket.lat),
-    longitude: Number(apiMarket.long),
+    longitude: Number(apiMarket.lon),
     category: "전통시장",
     rating: undefined,
     images: [],
@@ -232,6 +232,95 @@ export const fetchProductsByStoreId = async (storeId: string): Promise<Product[]
     return products;
   } catch (error) {
     console.error("Error fetching products:", error);
+    throw error;
+  }
+};
+
+// 이미지 예측 API URL
+const PREDICT_API_URL = process.env.EXPO_PUBLIC_PREDICT_API_URL || "http://localhost:8000/";
+
+// 이미지 예측 API 응답 타입
+export interface PredictApiResponse {
+  label: string;
+  confidence: number;
+  chosen_label: string;
+  shops: PredictShop[];
+  explanation: {
+    title: string;
+    summary: string;
+  };
+}
+
+export interface PredictShop {
+  store_id: number;
+  store_name: string;
+  lat: number;
+  lon: number;
+  address: string;
+  menu_id: number;
+  menu_name: string;
+  menu_price: number;
+  similarity: number;
+  menus: PredictMenu[];
+}
+
+export interface PredictMenu {
+  menu_id: number;
+  menu_name: string;
+  menu_price: number;
+}
+
+/**
+ * 이미지를 분석하여 음식을 인식하고 관련 가게 목록을 가져오는 API 함수
+ * @param imageUri - 이미지 URI
+ * @param langCode - 언어 코드 (예: 'ko', 'en', 'ja')
+ * @param marketId - 시장 ID
+ * @returns 예측 결과 및 가게 목록
+ */
+export const predictFoodImage = async (
+  imageUri: string,
+  langCode: string,
+  marketId: string
+): Promise<PredictApiResponse> => {
+  try {
+    const formData = new FormData();
+
+    // 웹 환경인 경우 Blob으로 변환
+    if (imageUri.startsWith("data:") || imageUri.startsWith("blob:")) {
+      // Data URL을 Blob으로 변환
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      formData.append("file", blob, "food_photo.jpg");
+    } else {
+      // React Native 환경
+      formData.append("file", {
+        uri: imageUri,
+        type: "image/jpeg",
+        name: "food_photo.jpg",
+      } as any);
+    }
+
+    // 언어 코드 추가
+    formData.append("lang_code", langCode);
+
+    // 시장 ID 추가
+    formData.append("market_no", marketId);
+
+    const response = await fetch(PREDICT_API_URL, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Server error response:", errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data: PredictApiResponse = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error predicting food image:", error);
     throw error;
   }
 };

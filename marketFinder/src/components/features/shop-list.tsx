@@ -286,8 +286,10 @@ export function ShopList({
 
   return (
     <Animated.View style={[styles.container, { height: panelHeight }]}>
-      <View style={styles.header} {...panResponder.panHandlers}>
-        <View style={styles.dragHandle} />
+      <View style={styles.headerWrapper}>
+        <View style={styles.header} {...panResponder.panHandlers}>
+          <View style={styles.dragHandle} />
+        </View>
         <View style={styles.headerContent}>
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
             <Text style={styles.backIcon}>←</Text>
@@ -333,24 +335,27 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 10,
   },
+  headerWrapper: {
+    flexDirection: "column",
+  },
   header: {
     flexDirection: "column",
     alignItems: "center",
     paddingTop: 12,
-    paddingBottom: 12,
-    paddingHorizontal: 20,
+    paddingBottom: 8,
   },
   dragHandle: {
     width: 40,
     height: 5,
     backgroundColor: "#ddd",
     borderRadius: 3,
-    marginBottom: 12,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     width: "100%",
+    paddingHorizontal: 20,
+    paddingBottom: 12,
   },
   backButton: {
     marginRight: 12,

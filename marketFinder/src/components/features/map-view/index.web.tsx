@@ -43,7 +43,7 @@ export function MapViewComponent({ initialRegion }: MapViewComponentProps) {
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    language: selectedLanguage.code,
+    language: 'en', // 영어로 고정 (Google Maps는 동적 언어 변경 미지원)
   });
 
   if (loadError) {

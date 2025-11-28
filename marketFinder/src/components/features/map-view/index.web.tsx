@@ -1,5 +1,5 @@
 import { GoogleMap, useLoadScript } from '@react-google-maps/api';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useLanguage } from '../../../contexts/language-context';
 
@@ -19,6 +19,7 @@ const mapContainerStyle = {
 
 export function MapViewComponent({ initialRegion }: MapViewComponentProps) {
   const { selectedLanguage } = useLanguage();
+  const [mapKey, setMapKey] = useState(0);
 
   // 기본 위치: 서울
   const defaultRegion = {
@@ -34,6 +35,11 @@ export function MapViewComponent({ initialRegion }: MapViewComponentProps) {
     lat: region.latitude,
     lng: region.longitude,
   };
+
+  // 언어가 변경될 때마다 지도를 다시 로드
+  useEffect(() => {
+    setMapKey(prev => prev + 1);
+  }, [selectedLanguage.code]);
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '',
@@ -57,15 +63,18 @@ export function MapViewComponent({ initialRegion }: MapViewComponentProps) {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <p style={styles.loadingText}>지도 로딩 중...</p>
+          <p style={styles.loadingText}>
+            지도 로딩 중... ({selectedLanguage.nativeName})
+          </p>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} key={selectedLanguage.code}>
       <GoogleMap
+        key={mapKey}
         mapContainerStyle={mapContainerStyle}
         center={center}
         zoom={13}

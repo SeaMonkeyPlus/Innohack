@@ -4,10 +4,11 @@ import React, { useState } from 'react';
 import {
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import { useLanguage } from '../../contexts/language-context';
 
@@ -49,38 +50,47 @@ export function LanguageSelector() {
                 styles.dropdown,
                 { backgroundColor: isDark ? '#1c1c1c' : '#ffffff' },
               ]}>
-              {LANGUAGES.map((language) => (
-                <TouchableOpacity
-                  key={language.code}
-                  style={[
-                    styles.languageItem,
-                    selectedLanguage.code === language.code && styles.selectedItem,
-                    { borderBottomColor: isDark ? '#333' : '#e0e0e0' },
-                  ]}
-                  onPress={() => handleLanguageSelect(language)}
-                  activeOpacity={0.7}>
-                  <Text style={styles.flag}>{language.flag}</Text>
-                  <View style={styles.languageInfo}>
-                    <Text
-                      style={[
-                        styles.nativeName,
-                        { color: isDark ? '#fff' : '#000' },
-                      ]}>
-                      {language.nativeName}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.englishName,
-                        { color: isDark ? '#999' : '#666' },
-                      ]}>
-                      {language.name}
-                    </Text>
-                  </View>
-                  {selectedLanguage.code === language.code && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
-                </TouchableOpacity>
-              ))}
+              <ScrollView
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={true}
+                bounces={false}>
+                {LANGUAGES.map((language, index) => (
+                  <TouchableOpacity
+                    key={language.code}
+                    style={[
+                      styles.languageItem,
+                      selectedLanguage.code === language.code &&
+                        styles.selectedItem,
+                      index !== LANGUAGES.length - 1 && {
+                        borderBottomWidth: 1,
+                        borderBottomColor: isDark ? '#333' : '#e0e0e0',
+                      },
+                    ]}
+                    onPress={() => handleLanguageSelect(language)}
+                    activeOpacity={0.7}>
+                    <Text style={styles.flag}>{language.flag}</Text>
+                    <View style={styles.languageInfo}>
+                      <Text
+                        style={[
+                          styles.nativeName,
+                          { color: isDark ? '#fff' : '#000' },
+                        ]}>
+                        {language.nativeName}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.englishName,
+                          { color: isDark ? '#999' : '#666' },
+                        ]}>
+                        {language.name}
+                      </Text>
+                    </View>
+                    {selectedLanguage.code === language.code && (
+                      <Text style={styles.checkmark}>✓</Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
           </View>
         </Pressable>
@@ -133,7 +143,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
     minWidth: 220,
-    maxHeight: 400,
+    maxHeight: 350,
+    overflow: 'hidden',
+  },
+  scrollView: {
+    maxHeight: 350,
   },
   languageItem: {
     flexDirection: 'row',
@@ -141,10 +155,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     gap: 12,
-    borderBottomWidth: 1,
+    backgroundColor: 'transparent',
   },
   selectedItem: {
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    backgroundColor: 'rgba(0, 122, 255, 0.15)',
   },
   flag: {
     fontSize: 24,

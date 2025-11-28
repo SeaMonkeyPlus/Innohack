@@ -153,7 +153,7 @@ export default function HomeScreen() {
         description: `${
           isEnglish && shop.menus?.[0]?.name_en ? shop.menus[0].name_en : shop.menu_name
         } - ${shop.menu_price.toLocaleString()}${t.common.won}`,
-        images: [],
+        images: shop.image_url ? [shop.image_url] : [],
         latitude: Number(shop.lat),
         longitude: Number(shop.lon),
         phone: undefined,

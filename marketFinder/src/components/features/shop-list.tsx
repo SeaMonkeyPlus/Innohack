@@ -1,6 +1,7 @@
 import { fetchProductsByStoreId, Product } from "@/src/services/market-api";
 import { Shop } from "@/src/types/shop";
 import { useTranslation } from "@hooks/use-translation";
+import { getImageUrl } from "@/src/constants/images";
 import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -140,13 +141,7 @@ export function ShopList({
         onPress={() => handleShopPress(item)}
       >
         <View style={styles.cardContent}>
-          {item.images && item.images.length > 0 ? (
-            <Image source={{ uri: item.images[0] }} style={styles.cardImage} resizeMode="cover" />
-          ) : (
-            <View style={styles.cardImagePlaceholder}>
-              <Text style={styles.placeholderText}>🏪</Text>
-            </View>
-          )}
+          <Image source={{ uri: getImageUrl(item.images, "shop") }} style={styles.cardImage} resizeMode="cover" />
 
           <View style={styles.cardInfo}>
             <Text style={styles.shopName} numberOfLines={1}>
@@ -260,9 +255,11 @@ export function ShopList({
                   {products[item.id].map((product) => (
                     <View key={product.id} style={styles.menuItem}>
                       <View style={styles.productContent}>
-                        {product.images && product.images.length > 0 && (
-                          <Image source={{ uri: product.images[0] }} style={styles.productImage} resizeMode="cover" />
-                        )}
+                        <Image
+                          source={{ uri: getImageUrl(product.images, "product") }}
+                          style={styles.productImage}
+                          resizeMode="cover"
+                        />
                         <View style={styles.productInfo}>
                           <View style={styles.menuItemHeader}>
                             <Text style={styles.menuItemName}>{product.name}</Text>

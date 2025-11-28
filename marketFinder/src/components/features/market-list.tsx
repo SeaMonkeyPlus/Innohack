@@ -1,5 +1,6 @@
 import { Market } from "@/src/types/market";
 import { useTranslation } from "@hooks/use-translation";
+import { getImageUrl } from "@/src/constants/images";
 import React, { useRef, useState } from "react";
 import {
   Animated,
@@ -111,13 +112,7 @@ export function MarketList({
     return (
       <View style={[styles.card, isSelected && styles.cardSelected, isExpanded && styles.cardExpanded]}>
         <TouchableOpacity style={styles.cardContent} onPress={() => handleMarketCardPress(item)} activeOpacity={0.9}>
-          {item.images && item.images.length > 0 ? (
-            <Image source={{ uri: item.images[0] }} style={styles.cardImage} resizeMode="cover" />
-          ) : (
-            <View style={styles.cardImagePlaceholder}>
-              <Text style={styles.placeholderText}>🏪</Text>
-            </View>
-          )}
+          <Image source={{ uri: getImageUrl(item.images, "market") }} style={styles.cardImage} resizeMode="cover" />
 
           <View style={styles.cardInfo}>
             <Text style={styles.marketName} numberOfLines={1}>

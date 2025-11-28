@@ -14,11 +14,8 @@ export interface MarketApiResponse {
 export interface Market {
   id: string;
   name: string;
-  address: string;
-  description?: string;
   latitude: number;
   longitude: number;
-  category: string;
   rating?: number;
   images?: string[];
   phone?: string;
@@ -33,11 +30,8 @@ const convertApiResponseToMarket = (apiMarket: MarketApiResponse): Market => {
   return {
     id: apiMarket.id.toString(),
     name: apiMarket.name,
-    address: "부산광역시", // API에서 주소 정보가 없으므로 기본값 설정
-    description: `${apiMarket.name}에 오신 것을 환영합니다.`,
     latitude: Number(apiMarket.lat),
     longitude: Number(apiMarket.lon),
-    category: "전통시장",
     rating: undefined,
     images: [],
     phone: undefined,
@@ -65,6 +59,7 @@ export const fetchMarkets = async (langCode: string = "en"): Promise<Market[]> =
     }
 
     const data: MarketApiResponse[] = await response.json();
+    console.log(data);
 
     // API 응답 데이터를 Market 배열로 변환
     const markets: Market[] = data.map(convertApiResponseToMarket);
@@ -262,6 +257,7 @@ export interface PredictShop {
   lon: number;
   address: string;
   address_en?: string;
+  image_url?: string;
   menu_id: number;
   menu_name: string;
   menu_price: number;
@@ -275,6 +271,7 @@ export interface PredictMenu {
   menu_id: number;
   menu_name: string;
   name_en?: string;
+  image_url?: string;
   menu_price: number;
   summary?: string;
   summary_en?: string;

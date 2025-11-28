@@ -1,4 +1,4 @@
-import { Product } from './product';
+import { Shop } from './shop';
 
 export interface Market {
   id: string;
@@ -12,5 +12,5 @@ export interface Market {
   images?: string[];
   phone?: string;
   openingHours?: string;
-  products: Product[];
+  shops: Shop[];
 }

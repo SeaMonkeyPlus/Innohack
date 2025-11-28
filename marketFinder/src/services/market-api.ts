@@ -159,7 +159,6 @@ export const fetchStoresByMarketId = async (marketId: string, langCode: string =
     }
 
     const data: StoreApiResponse[] = await response.json();
-    console.log(data);
 
     // API 응답 데이터를 Shop 배열로 변환
     const shops: Shop[] = data.map(convertApiResponseToShop);

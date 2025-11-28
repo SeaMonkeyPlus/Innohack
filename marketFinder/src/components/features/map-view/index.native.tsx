@@ -121,6 +121,25 @@ export function MapViewComponent({
             </Marker>
           );
         })}
+
+        {/* 가게 마커 */}
+        {shops.map((shop) => (
+          <Marker
+            key={`shop-${shop.id}`}
+            coordinate={{
+              latitude: shop.latitude,
+              longitude: shop.longitude,
+            }}
+            title={shop.name}
+            zIndex={10}
+          >
+            <View style={styles.shopMarkerContainer}>
+              <View style={styles.shopMarkerPin}>
+                <Text style={styles.shopMarkerEmoji}>🏪</Text>
+              </View>
+            </View>
+          </Marker>
+        ))}
       </MapView>
     </View>
   );
@@ -208,5 +227,26 @@ const styles = StyleSheet.create({
     backgroundColor: "#4285F4",
     borderWidth: 3,
     borderColor: "#FFFFFF",
+  },
+  shopMarkerContainer: {
+    alignItems: "center",
+  },
+  shopMarkerPin: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#2196F3",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  shopMarkerEmoji: {
+    fontSize: 20,
   },
 });

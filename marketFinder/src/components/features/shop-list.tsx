@@ -1,6 +1,8 @@
 import { Shop } from "@/src/types/shop";
+import { fetchProductsByStoreId, Product } from "@/src/services/market-api";
 import React, { useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   Dimensions,
   FlatList,
@@ -37,6 +39,8 @@ export function ShopList({
   onHeightChange,
 }: ShopListProps) {
   const [expandedShopId, setExpandedShopId] = useState<string | null>(null);
+  const [products, setProducts] = useState<Record<string, Product[]>>({});
+  const [loadingProducts, setLoadingProducts] = useState<Record<string, boolean>>({});
   const initialHeight = sharedHeight || MIN_HEIGHT;
   const [currentHeight, setCurrentHeight] = useState(initialHeight);
   const panelHeight = useRef(new Animated.Value(initialHeight)).current;
@@ -95,13 +99,27 @@ export function ShopList({
     })
   ).current;
 
-  const handleShopPress = (shop: Shop) => {
+  const handleShopPress = async (shop: Shop) => {
     // Toggle expand/collapse
     if (expandedShopId === shop.id) {
       setExpandedShopId(null);
     } else {
       setExpandedShopId(shop.id);
       onShopPress?.(shop);
+
+      // 상품 정보가 없으면 API에서 가져오기
+      if (!products[shop.id]) {
+        setLoadingProducts((prev) => ({ ...prev, [shop.id]: true }));
+        try {
+          const productData = await fetchProductsByStoreId(shop.id);
+          setProducts((prev) => ({ ...prev, [shop.id]: productData }));
+        } catch (error) {
+          console.error("Failed to load products:", error);
+          setProducts((prev) => ({ ...prev, [shop.id]: [] }));
+        } finally {
+          setLoadingProducts((prev) => ({ ...prev, [shop.id]: false }));
+        }
+      }
     }
   };
 
@@ -225,23 +243,37 @@ export function ShopList({
               </View>
             )}
 
-            {/* Menu */}
-            {item.menu && item.menu.length > 0 && (
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>🍽️ 메뉴</Text>
+            {/* Products/Menu */}
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>🍽️ 판매 상품</Text>
+              {loadingProducts[item.id] ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#4CAF50" />
+                  <Text style={styles.loadingText}>상품 정보를 불러오는 중...</Text>
+                </View>
+              ) : products[item.id] && products[item.id].length > 0 ? (
                 <View style={styles.menuContainer}>
-                  {item.menu.map((menuItem, index) => (
-                    <View key={index} style={styles.menuItem}>
-                      <View style={styles.menuItemHeader}>
-                        <Text style={styles.menuItemName}>{menuItem.name}</Text>
-                        <Text style={styles.menuItemPrice}>{menuItem.price.toLocaleString()}원</Text>
+                  {products[item.id].map((product) => (
+                    <View key={product.id} style={styles.menuItem}>
+                      <View style={styles.productContent}>
+                        {product.images && product.images.length > 0 && (
+                          <Image source={{ uri: product.images[0] }} style={styles.productImage} resizeMode="cover" />
+                        )}
+                        <View style={styles.productInfo}>
+                          <View style={styles.menuItemHeader}>
+                            <Text style={styles.menuItemName}>{product.name}</Text>
+                            <Text style={styles.menuItemPrice}>{product.price.toLocaleString()}원</Text>
+                          </View>
+                          {product.description && <Text style={styles.menuItemDescription}>{product.description}</Text>}
+                        </View>
                       </View>
-                      {menuItem.description && <Text style={styles.menuItemDescription}>{menuItem.description}</Text>}
                     </View>
                   ))}
                 </View>
-              </View>
-            )}
+              ) : (
+                <Text style={styles.noProductsText}>등록된 상품이 없습니다</Text>
+              )}
+            </View>
 
             <TouchableOpacity style={styles.collapseButton} onPress={() => setExpandedShopId(null)}>
               <Text style={styles.collapseButtonText}>접기 ▲</Text>
@@ -551,5 +583,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#888",
     lineHeight: 16,
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  noProductsText: {
+    fontSize: 14,
+    color: "#999",
+    fontStyle: "italic",
+    paddingVertical: 8,
+  },
+  productContent: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  productImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: "#f0f0f0",
+  },
+  productInfo: {
+    flex: 1,
   },
 });

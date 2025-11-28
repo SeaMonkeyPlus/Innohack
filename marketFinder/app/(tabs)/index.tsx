@@ -1,11 +1,12 @@
 import { Market } from "@/src/types/market";
 import { useEffect, useState } from "react";
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { LanguageSelector } from "@/src/components/features/language-selector";
 import { MarketList } from "@/src/components/features/market-list";
 import { ShopList } from "@/src/components/features/shop-list";
 import { useSearch } from "@/src/contexts/search-context";
+import { fetchMarkets, fetchStoresByMarketId, Shop } from "@/src/services/market-api";
 
 // 플랫폼별로 Map 컴포넌트 import
 let MapViewComponent: React.ComponentType<any>;
@@ -401,6 +402,30 @@ export default function HomeScreen() {
   const [focusedLocation, setFocusedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [viewMode, setViewMode] = useState<"markets" | "shops">("markets");
   const [sharedListHeight, setSharedListHeight] = useState<number | null>(null);
+  const [markets, setMarkets] = useState<Market[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingShops, setIsLoadingShops] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // API에서 시장 데이터 가져오기
+  useEffect(() => {
+    const loadMarkets = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await fetchMarkets();
+        setMarkets(data);
+      } catch (err) {
+        console.error("Failed to load markets:", err);
+        setError("시장 정보를 불러오는데 실패했습니다.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadMarkets();
+  }, []);
 
   // Context의 선택된 시장 ID와 로컬 상태 동기화
   useEffect(() => {
@@ -420,11 +445,25 @@ export default function HomeScreen() {
     setSelectedMarketId(market.id);
   };
 
-  const handleSelectMarket = (market: Market) => {
+  const handleSelectMarket = async (market: Market) => {
     setSelectedMarket(market.id);
     setSelectedMarketId(market.id);
     setFocusedLocation({ latitude: market.latitude, longitude: market.longitude });
-    setViewMode("shops");
+
+    // 가게 목록 API 호출
+    try {
+      setIsLoadingShops(true);
+      const storesData = await fetchStoresByMarketId(market.id);
+      setShops(storesData);
+      setViewMode("shops");
+    } catch (err) {
+      console.error("Failed to load stores:", err);
+      // 가게 목록을 불러오지 못해도 shops 뷰로 전환 (빈 리스트 표시)
+      setShops([]);
+      setViewMode("shops");
+    } finally {
+      setIsLoadingShops(false);
+    }
   };
 
   const handleMarketPress = (market: Market) => {
@@ -448,21 +487,56 @@ export default function HomeScreen() {
     clearSearch();
   };
 
-  const selectedMarket = sampleMarkets.find((m) => m.id === selectedMarketId);
+  const selectedMarket = markets.find((m) => m.id === selectedMarketId);
 
   // 검색 키워드가 있으면 해당 키워드를 포함하는 가게만 필터링
-  const filteredShops =
-    selectedMarket?.shops.filter((shop) => {
-      if (!searchKeyword) return true;
+  const filteredShops = shops.filter((shop) => {
+    if (!searchKeyword) return true;
 
-      // 가게 이름, 카테고리, 설명에서 검색 키워드 포함 여부 확인
-      const keyword = searchKeyword.toLowerCase();
-      const matchesName = shop.name.toLowerCase().includes(keyword);
-      const matchesCategory = shop.category?.toLowerCase().includes(keyword);
-      const matchesDescription = shop.description?.toLowerCase().includes(keyword);
+    // 가게 이름, 카테고리, 설명에서 검색 키워드 포함 여부 확인
+    const keyword = searchKeyword.toLowerCase();
+    const matchesName = shop.name.toLowerCase().includes(keyword);
+    const matchesCategory = shop.category?.toLowerCase().includes(keyword);
+    const matchesDescription = shop.description?.toLowerCase().includes(keyword);
 
-      return matchesName || matchesCategory || matchesDescription;
-    }) || [];
+    return matchesName || matchesCategory || matchesDescription;
+  });
+
+  // 로딩 중일 때
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color="#8B4513" />
+        <Text style={styles.loadingText}>시장 정보를 불러오는 중...</Text>
+      </View>
+    );
+  }
+
+  // 에러가 발생했을 때
+  if (error) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Text style={styles.errorText}>⚠️</Text>
+        <Text style={styles.errorMessage}>{error}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => {
+            setError(null);
+            setIsLoading(true);
+            fetchMarkets()
+              .then(setMarkets)
+              .catch((err) => {
+                console.error("Failed to load markets:", err);
+                setError("시장 정보를 불러오는데 실패했습니다.");
+              })
+              .finally(() => setIsLoading(false));
+          }}
+        >
+          <Text style={styles.retryButtonText}>다시 시도</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -481,7 +555,8 @@ export default function HomeScreen() {
 
       {/* Map */}
       <MapViewComponent
-        markets={sampleMarkets}
+        markets={markets}
+        shops={viewMode === "shops" ? shops : []}
         onMarkerPress={handleMarkerPress}
         selectedMarketId={selectedMarketId}
         focusedLocation={focusedLocation}
@@ -490,7 +565,7 @@ export default function HomeScreen() {
       {/* List - Market List or Shop List */}
       {viewMode === "markets" ? (
         <MarketList
-          markets={sampleMarkets}
+          markets={markets}
           selectedMarketId={selectedMarketId}
           onMarketPress={handleMarketPress}
           onSelectMarket={handleSelectMarket}
@@ -498,15 +573,22 @@ export default function HomeScreen() {
           onHeightChange={setSharedListHeight}
         />
       ) : selectedMarket ? (
-        <ShopList
-          shops={filteredShops}
-          marketName={searchKeyword ? `${selectedMarket.name} - "${searchKeyword}" 검색 결과` : selectedMarket.name}
-          onBack={handleBackToMarkets}
-          onShopPress={handleShopPress}
-          searchKeyword={searchKeyword}
-          sharedHeight={sharedListHeight}
-          onHeightChange={setSharedListHeight}
-        />
+        isLoadingShops ? (
+          <View style={[styles.container, styles.centerContent]}>
+            <ActivityIndicator size="large" color="#8B4513" />
+            <Text style={styles.loadingText}>가게 정보를 불러오는 중...</Text>
+          </View>
+        ) : (
+          <ShopList
+            shops={filteredShops}
+            marketName={searchKeyword ? `${selectedMarket.name} - "${searchKeyword}" 검색 결과` : selectedMarket.name}
+            onBack={handleBackToMarkets}
+            onShopPress={handleShopPress}
+            searchKeyword={searchKeyword}
+            sharedHeight={sharedListHeight}
+            onHeightChange={setSharedListHeight}
+          />
+        )
       ) : null}
     </View>
   );
@@ -552,5 +634,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+  },
+  centerContent: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#666",
+  },
+  errorText: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  errorMessage: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 24,
+    paddingHorizontal: 32,
+  },
+  retryButton: {
+    backgroundColor: "#8B4513",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

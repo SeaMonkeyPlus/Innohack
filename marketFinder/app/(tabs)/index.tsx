@@ -5,6 +5,7 @@ import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View }
 import { LanguageSelector } from "@/src/components/features/language-selector";
 import { MarketList } from "@/src/components/features/market-list";
 import { ShopList } from "@/src/components/features/shop-list";
+import { useLanguage } from "@/src/contexts/language-context";
 import { useSearch } from "@/src/contexts/search-context";
 import { fetchMarkets, fetchStoresByMarketId, Shop } from "@/src/services/market-api";
 
@@ -26,6 +27,7 @@ try {
 }
 
 export default function HomeScreen() {
+  const { selectedLanguage } = useLanguage();
   const {
     searchKeyword,
     clearSearch,
@@ -49,7 +51,7 @@ export default function HomeScreen() {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await fetchMarkets();
+        const data = await fetchMarkets(selectedLanguage.code);
         setMarkets(data);
       } catch (err) {
         console.error("Failed to load markets:", err);
@@ -60,7 +62,7 @@ export default function HomeScreen() {
     };
 
     loadMarkets();
-  }, []);
+  }, [selectedLanguage.code]);
 
   // Context의 선택된 시장 ID와 로컬 상태 동기화 및 가게 목록 자동 로드
   useEffect(() => {
@@ -81,7 +83,7 @@ export default function HomeScreen() {
       const loadStoresForSavedMarket = async () => {
         try {
           setIsLoadingShops(true);
-          const storesData = await fetchStoresByMarketId(contextSelectedMarketId);
+          const storesData = await fetchStoresByMarketId(contextSelectedMarketId, selectedLanguage.code);
           setShops(storesData);
           setViewMode("shops");
         } catch (err) {
@@ -123,7 +125,7 @@ export default function HomeScreen() {
         const loadAllStores = async () => {
           try {
             setIsLoadingShops(true);
-            const storesData = await fetchStoresByMarketId(selectedMarketId);
+            const storesData = await fetchStoresByMarketId(selectedMarketId, selectedLanguage.code);
             setShops(storesData);
           } catch (err) {
             console.error("Failed to load all stores:", err);
@@ -156,7 +158,7 @@ export default function HomeScreen() {
     // 가게 목록 API 호출
     try {
       setIsLoadingShops(true);
-      const storesData = await fetchStoresByMarketId(market.id);
+      const storesData = await fetchStoresByMarketId(market.id, selectedLanguage.code);
       setShops(storesData);
       setViewMode("shops");
     } catch (err) {
@@ -226,7 +228,7 @@ export default function HomeScreen() {
           onPress={() => {
             setError(null);
             setIsLoading(true);
-            fetchMarkets()
+            fetchMarkets(selectedLanguage.code)
               .then(setMarkets)
               .catch((err) => {
                 console.error("Failed to load markets:", err);

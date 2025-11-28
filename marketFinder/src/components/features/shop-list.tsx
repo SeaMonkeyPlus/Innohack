@@ -1,5 +1,5 @@
-import { Shop } from "@/src/types/shop";
 import { fetchProductsByStoreId, Product } from "@/src/services/market-api";
+import { Shop } from "@/src/types/shop";
 import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useLanguage } from "../../contexts/language-context";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 const MIN_HEIGHT = SCREEN_HEIGHT * 0.1; // 10%
@@ -38,6 +39,7 @@ export function ShopList({
   sharedHeight,
   onHeightChange,
 }: ShopListProps) {
+  const { selectedLanguage } = useLanguage();
   const [expandedShopId, setExpandedShopId] = useState<string | null>(null);
   const [products, setProducts] = useState<Record<string, Product[]>>({});
   const [loadingProducts, setLoadingProducts] = useState<Record<string, boolean>>({});
@@ -111,7 +113,7 @@ export function ShopList({
       if (!products[shop.id]) {
         setLoadingProducts((prev) => ({ ...prev, [shop.id]: true }));
         try {
-          const productData = await fetchProductsByStoreId(shop.id);
+          const productData = await fetchProductsByStoreId(shop.id, selectedLanguage.code);
           setProducts((prev) => ({ ...prev, [shop.id]: productData }));
         } catch (error) {
           console.error("Failed to load products:", error);

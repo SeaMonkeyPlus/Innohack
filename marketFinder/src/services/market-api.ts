@@ -48,11 +48,12 @@ const convertApiResponseToMarket = (apiMarket: MarketApiResponse): Market => {
 
 /**
  * 시장 목록을 가져오는 API 함수
+ * @param langCode - 언어 코드 (예: 'ko', 'en', 'ja', 'zh')
  * @returns Market 배열
  */
-export const fetchMarkets = async (): Promise<Market[]> => {
+export const fetchMarkets = async (langCode: string = 'en'): Promise<Market[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/markets`, {
+    const response = await fetch(`${API_BASE_URL}/markets?lang_code=${langCode}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -142,11 +143,12 @@ const convertApiResponseToShop = (apiStore: StoreApiResponse): Shop => {
 /**
  * 특정 시장의 가게 목록을 가져오는 API 함수
  * @param marketId - 시장 ID
+ * @param langCode - 언어 코드 (예: 'ko', 'en', 'ja', 'zh')
  * @returns Shop 배열
  */
-export const fetchStoresByMarketId = async (marketId: string): Promise<Shop[]> => {
+export const fetchStoresByMarketId = async (marketId: string, langCode: string = 'en'): Promise<Shop[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/markets/${marketId}/stores`, {
+    const response = await fetch(`${API_BASE_URL}/markets/${marketId}/stores?lang_code=${langCode}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -209,11 +211,12 @@ const convertApiResponseToProduct = (apiProduct: ProductApiResponse): Product =>
 /**
  * 특정 가게의 상품 목록을 가져오는 API 함수
  * @param storeId - 가게 ID
+ * @param langCode - 언어 코드 (예: 'ko', 'en', 'ja', 'zh')
  * @returns Product 배열
  */
-export const fetchProductsByStoreId = async (storeId: string): Promise<Product[]> => {
+export const fetchProductsByStoreId = async (storeId: string, langCode: string = 'en'): Promise<Product[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/stores/${storeId}/products`, {
+    const response = await fetch(`${API_BASE_URL}/stores/${storeId}/products?lang_code=${langCode}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

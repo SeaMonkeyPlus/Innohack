@@ -1,4 +1,5 @@
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
+import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSearch } from "../../contexts/search-context";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -23,6 +25,8 @@ interface CropArea {
 }
 
 export default function CameraCapture() {
+  const router = useRouter();
+  const { setSearchData } = useSearch();
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -154,30 +158,29 @@ export default function CameraCapture() {
       //   height: cropArea.height,
       // });
       //
-      // if (result.success && result.restaurants && result.restaurants.length > 0) {
-      //   // 분석 성공 - 결과 페이지로 이동
-      //   console.log("분석 결과:", result);
-      //   Alert.alert("분석 완료", `${result.restaurants.length}개의 음식점을 찾았습니다!`, [
-      //     {
-      //       text: "확인",
-      //       onPress: () => {
-      //         // 결과 페이지로 이동
-      //         // navigation.navigate('SearchResults', {
-      //         //   restaurants: result.restaurants,
-      //         //   detectedItems: result.detectedItems
-      //         // });
-      //       },
-      //     },
-      //   ]);
+      // if (result.success && result.detectedItem) {
+      //   // 분석 성공 - 검색 데이터 저장 및 홈 탭으로 이동
+      //   setSearchData(result.detectedItem, capturedImage);
+      //   router.push("/(tabs)");
       // } else {
       //   Alert.alert("알림", result.message || "관련 정보를 찾을 수 없습니다.");
       // }
 
-      // 현재: 테스트용 알림
-      Alert.alert(
-        "완료",
-        `선택한 영역이 전송됩니다.\n크기: ${Math.round(cropArea.width)}x${Math.round(cropArea.height)}`
-      );
+      // 현재: 더미 데이터로 테스트 (호떡으로 가정)
+      setSearchData("호떡", capturedImage);
+
+      // 홈 탭으로 이동
+      router.push("/(tabs)");
+
+      // 초기화
+      setCapturedImage(null);
+      setIsSelecting(false);
+      setCropArea({
+        x: SCREEN_WIDTH * 0.1,
+        y: SCREEN_HEIGHT * 0.2,
+        width: SCREEN_WIDTH * 0.8,
+        height: SCREEN_HEIGHT * 0.4,
+      });
     } catch (error) {
       console.error("전송 오류:", error);
       Alert.alert("오류", "이미지 분석에 실패했습니다. 다시 시도해주세요.");

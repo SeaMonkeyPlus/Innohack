@@ -1,3 +1,9 @@
+export interface MenuItem {
+  name: string;
+  price: number;
+  description?: string;
+}
+
 export interface Shop {
   id: string;
   name: string;
@@ -10,4 +16,5 @@ export interface Shop {
   longitude: number;
   phone?: string;
   openingHours?: string;
+  menu?: MenuItem[];
 }

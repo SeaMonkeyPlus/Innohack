@@ -1,10 +1,11 @@
 import { Market } from "@/src/types/market";
-import { useState } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { LanguageSelector } from "@/src/components/features/language-selector";
 import { MarketList } from "@/src/components/features/market-list";
 import { ShopList } from "@/src/components/features/shop-list";
+import { useSearch } from "@/src/contexts/search-context";
 
 // 플랫폼별로 Map 컴포넌트 import
 const MapViewComponent =
@@ -36,24 +37,18 @@ const sampleMarkets: Market[] = [
         description: "30년 전통의 씨앗호떡 전문점",
         images: ["https://images.unsplash.com/photo-1603105037880-880cd4edfb0d?w=800"],
         latitude: 35.0988,
-        longitude: 129.0290,
+        longitude: 129.029,
         phone: "051-245-1234",
         openingHours: "09:00 - 19:00",
+        menu: [
+          { name: "씨앗호떡", price: 2000, description: "해바라기씨, 호박씨 듬뿍" },
+          { name: "흑당호떡", price: 2500, description: "달콤한 흑당시럽" },
+          { name: "꿀호떡", price: 2000, description: "꿀이 흐르는 호떡" },
+          { name: "녹차호떡", price: 2500, description: "고소한 녹차맛" },
+        ],
       },
       {
         id: "1-2",
-        name: "국제시장 분식",
-        address: "부산 중구 신창동4가 14-5",
-        rating: 4.6,
-        category: "분식",
-        description: "비빔당면과 떡볶이가 맛있는 분식집",
-        latitude: 35.0984,
-        longitude: 129.0294,
-        phone: "051-245-5678",
-        openingHours: "10:00 - 20:00",
-      },
-      {
-        id: "1-3",
         name: "꿀떡 명가",
         address: "부산 중구 신창동4가 14-2",
         rating: 4.7,
@@ -63,9 +58,68 @@ const sampleMarkets: Market[] = [
         longitude: 129.0291,
         phone: "051-245-9012",
         openingHours: "09:30 - 18:30",
+        menu: [
+          { name: "꿀호떡", price: 1800, description: "정통 꿀호떡" },
+          { name: "시나몬호떡", price: 2000, description: "시나몬 향 가득" },
+          { name: "단팥호떡", price: 2000, description: "팥앙금이 듬뿍" },
+          { name: "치즈호떡", price: 2500, description: "쭉 늘어나는 치즈" },
+        ],
+      },
+      {
+        id: "1-3",
+        name: "국제시장 호떡",
+        address: "부산 중구 신창동4가 14-8",
+        rating: 4.6,
+        category: "떡·디저트",
+        description: "바삭한 겉과 촉촉한 속의 조화",
+        latitude: 35.0989,
+        longitude: 129.0293,
+        phone: "051-245-7890",
+        openingHours: "08:30 - 19:30",
+        menu: [
+          { name: "전통호떡", price: 1500, description: "옛날 그대로의 맛" },
+          { name: "씨앗호떡", price: 2000, description: "견과류 가득" },
+          { name: "팥호떡", price: 1800, description: "달콤한 팥앙금" },
+        ],
       },
       {
         id: "1-4",
+        name: "원조 호떡가게",
+        address: "부산 중구 신창동4가 14-10",
+        rating: 4.5,
+        category: "떡·디저트",
+        description: "50년 전통 호떡 맛집",
+        latitude: 35.0986,
+        longitude: 129.0295,
+        phone: "051-245-3333",
+        openingHours: "09:00 - 20:00",
+        menu: [
+          { name: "원조호떡", price: 1500, description: "50년 전통의 맛" },
+          { name: "흑설탕호떡", price: 2000, description: "건강한 흑설탕" },
+          { name: "크림치즈호떡", price: 3000, description: "부드러운 크림치즈" },
+          { name: "야채호떡", price: 2500, description: "신선한 야채 듬뿍" },
+        ],
+      },
+      {
+        id: "1-5",
+        name: "국제시장 분식",
+        address: "부산 중구 신창동4가 14-5",
+        rating: 4.6,
+        category: "분식",
+        description: "비빔당면과 떡볶이가 맛있는 분식집",
+        latitude: 35.0984,
+        longitude: 129.0294,
+        phone: "051-245-5678",
+        openingHours: "10:00 - 20:00",
+        menu: [
+          { name: "떡볶이", price: 4000, description: "매콤달콤한 떡볶이" },
+          { name: "비빔당면", price: 5000, description: "쫄깃한 당면" },
+          { name: "튀김 (5개)", price: 3000, description: "바삭한 모둠튀김" },
+          { name: "순대", price: 5000, description: "찹쌀순대" },
+        ],
+      },
+      {
+        id: "1-6",
         name: "부산 어묵 본점",
         address: "부산 중구 신창동4가 14-6",
         rating: 4.5,
@@ -75,6 +129,12 @@ const sampleMarkets: Market[] = [
         longitude: 129.0293,
         phone: "051-245-3456",
         openingHours: "08:00 - 20:00",
+        menu: [
+          { name: "꼬치 어묵", price: 1500, description: "국물 한 그릇 포함" },
+          { name: "모듬 어묵", price: 8000, description: "5가지 어묵 모음" },
+          { name: "치즈 어묵", price: 2000, description: "치즈가 쏙" },
+          { name: "야채 어묵", price: 1500, description: "건강한 야채" },
+        ],
       },
     ],
   },
@@ -240,7 +300,7 @@ const sampleMarkets: Market[] = [
         description: "진한 국물의 돼지국밥 전문점",
         images: ["https://images.unsplash.com/photo-1585032226651-759b368d7246?w=800"],
         latitude: 35.1388,
-        longitude: 129.0560,
+        longitude: 129.056,
         phone: "051-634-1111",
         openingHours: "07:00 - 22:00",
       },
@@ -303,7 +363,7 @@ const sampleMarkets: Market[] = [
         rating: 4.5,
         category: "잼·청",
         description: "신선한 과일로 만든 수제 잼",
-        latitude: 35.0770,
+        latitude: 35.077,
         longitude: 129.0475,
         phone: "051-418-2222",
         openingHours: "10:30 - 18:30",
@@ -325,20 +385,47 @@ const sampleMarkets: Market[] = [
 ];
 
 export default function HomeScreen() {
-  const [selectedMarketId, setSelectedMarketId] = useState<string | undefined>(undefined);
+  const { searchKeyword, clearSearch, selectedMarketId: contextSelectedMarketId, setSelectedMarket } = useSearch();
+  const [selectedMarketId, setSelectedMarketId] = useState<string | undefined>(contextSelectedMarketId || undefined);
   const [focusedLocation, setFocusedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isListMinimized, setIsListMinimized] = useState(false);
   const [viewMode, setViewMode] = useState<"markets" | "shops">("markets");
+
+  // Context의 선택된 시장 ID와 로컬 상태 동기화
+  useEffect(() => {
+    if (contextSelectedMarketId) {
+      setSelectedMarketId(contextSelectedMarketId);
+    }
+  }, [contextSelectedMarketId]);
+
+  // 검색 키워드가 있을 때 자동으로 필터링된 가게 표시
+  useEffect(() => {
+    if (searchKeyword && selectedMarketId) {
+      setViewMode("shops");
+      setIsListMinimized(false);
+    }
+  }, [searchKeyword, selectedMarketId]);
 
   const handleMarkerPress = (market: Market) => {
     setSelectedMarketId(market.id);
     setIsListMinimized(false);
   };
 
-  const handleMarketPress = (market: Market) => {
+  const handleSelectMarket = (market: Market) => {
+    setSelectedMarket(market.id);
     setSelectedMarketId(market.id);
     setFocusedLocation({ latitude: market.latitude, longitude: market.longitude });
     setViewMode("shops");
+    setIsListMinimized(false);
+  };
+
+  const handleMarketPress = (market: Market) => {
+    setFocusedLocation({ latitude: market.latitude, longitude: market.longitude });
+  };
+
+  const handleChangeMarket = () => {
+    setViewMode("markets");
+    setFocusedLocation(null);
     setIsListMinimized(false);
   };
 
@@ -352,6 +439,7 @@ export default function HomeScreen() {
     setViewMode("markets");
     setFocusedLocation(null);
     setIsListMinimized(false);
+    clearSearch();
   };
 
   const handleToggleMinimize = () => {
@@ -360,12 +448,34 @@ export default function HomeScreen() {
 
   const selectedMarket = sampleMarkets.find((m) => m.id === selectedMarketId);
 
+  // 검색 키워드가 있으면 해당 키워드를 포함하는 가게만 필터링
+  const filteredShops =
+    selectedMarket?.shops.filter((shop) => {
+      if (!searchKeyword) return true;
+
+      // 가게 이름, 카테고리, 설명에서 검색 키워드 포함 여부 확인
+      const keyword = searchKeyword.toLowerCase();
+      const matchesName = shop.name.toLowerCase().includes(keyword);
+      const matchesCategory = shop.category?.toLowerCase().includes(keyword);
+      const matchesDescription = shop.description?.toLowerCase().includes(keyword);
+
+      return matchesName || matchesCategory || matchesDescription;
+    }) || [];
+
   return (
     <View style={styles.container}>
       {/* Language Selector - Fixed at top left */}
       <View style={styles.languageSelectorContainer}>
         <LanguageSelector />
       </View>
+
+      {/* Selected Market Badge or Change Button - Fixed at top right */}
+      {selectedMarket && viewMode === "shops" && (
+        <TouchableOpacity style={styles.selectedMarketBadge} onPress={handleChangeMarket} activeOpacity={0.8}>
+          <Text style={styles.selectedMarketText}>{selectedMarket.name}</Text>
+          <Text style={styles.changeButtonText}>변경</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Map */}
       <MapViewComponent
@@ -381,17 +491,19 @@ export default function HomeScreen() {
           markets={sampleMarkets}
           selectedMarketId={selectedMarketId}
           onMarketPress={handleMarketPress}
+          onSelectMarket={handleSelectMarket}
           isMinimized={isListMinimized}
           onToggleMinimize={handleToggleMinimize}
         />
       ) : selectedMarket ? (
         <ShopList
-          shops={selectedMarket.shops}
-          marketName={selectedMarket.name}
+          shops={filteredShops}
+          marketName={searchKeyword ? `${selectedMarket.name} - "${searchKeyword}" 검색 결과` : selectedMarket.name}
           onBack={handleBackToMarkets}
           isMinimized={isListMinimized}
           onToggleMinimize={handleToggleMinimize}
           onShopPress={handleShopPress}
+          searchKeyword={searchKeyword}
         />
       ) : null}
     </View>
@@ -408,5 +520,35 @@ const styles = StyleSheet.create({
     top: 50,
     left: 16,
     zIndex: 1000,
+  },
+  selectedMarketBadge: {
+    position: "absolute",
+    top: 50,
+    right: 16,
+    zIndex: 1000,
+    backgroundColor: "#8B4513",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  selectedMarketText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+    marginRight: 8,
+  },
+  changeButtonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+    backgroundColor: "rgba(255,255,255,0.3)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
 });

@@ -1,18 +1,12 @@
-import { Market } from '@/src/types/market';
-import React from 'react';
-import {
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Market } from "@/src/types/market";
+import React, { useState } from "react";
+import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface MarketListProps {
   markets: Market[];
   selectedMarketId?: string;
   onMarketPress: (market: Market) => void;
+  onSelectMarket: (market: Market) => void;
   isMinimized: boolean;
   onToggleMinimize: () => void;
 }
@@ -21,19 +15,29 @@ export function MarketList({
   markets,
   selectedMarketId,
   onMarketPress,
+  onSelectMarket,
   isMinimized,
   onToggleMinimize,
 }: MarketListProps) {
+  const [expandedMarketId, setExpandedMarketId] = useState<string | null>(null);
+
+  const handleMarketCardPress = (market: Market) => {
+    // Toggle expand/collapse
+    if (expandedMarketId === market.id) {
+      setExpandedMarketId(null);
+    } else {
+      setExpandedMarketId(market.id);
+      onMarketPress(market);
+    }
+  };
+
   const renderMarketCard = ({ item }: { item: Market }) => {
     const isSelected = selectedMarketId === item.id;
+    const isExpanded = expandedMarketId === item.id;
 
     return (
-      <TouchableOpacity
-        style={[styles.card, isSelected && styles.cardSelected]}
-        onPress={() => onMarketPress(item)}
-        activeOpacity={0.9}
-      >
-        <View style={styles.cardContent}>
+      <View style={[styles.card, isSelected && styles.cardSelected, isExpanded && styles.cardExpanded]}>
+        <TouchableOpacity style={styles.cardContent} onPress={() => handleMarketCardPress(item)} activeOpacity={0.9}>
           {item.images && item.images.length > 0 ? (
             <Image source={{ uri: item.images[0] }} style={styles.cardImage} resizeMode="cover" />
           ) : (
@@ -68,8 +72,22 @@ export function MarketList({
               </Text>
             )}
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+
+        {/* 선택하기 버튼 - 확장되었을 때만 표시 */}
+        {isExpanded && (
+          <TouchableOpacity
+            style={[styles.selectButton, isSelected && styles.selectButtonSelected]}
+            onPress={() => {
+              onSelectMarket(item);
+              setExpandedMarketId(null);
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.selectButtonText, isSelected && styles.selectButtonTextSelected]}>선택하기</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     );
   };
 
@@ -81,7 +99,7 @@ export function MarketList({
           <Text style={styles.headerTitle}>부산 전통시장</Text>
           <Text style={styles.headerCount}>{markets.length}개</Text>
         </View>
-        <Text style={styles.toggleIcon}>{isMinimized ? '▲' : '▼'}</Text>
+        <Text style={styles.toggleIcon}>{isMinimized ? "▲" : "▼"}</Text>
       </TouchableOpacity>
       {!isMinimized && (
         <FlatList
@@ -98,15 +116,15 @@ export function MarketList({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    height: '40%',
-    backgroundColor: 'white',
+    height: "40%",
+    backgroundColor: "white",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -116,8 +134,8 @@ const styles = StyleSheet.create({
     height: 80,
   },
   header: {
-    flexDirection: 'column',
-    alignItems: 'center',
+    flexDirection: "column",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 12,
@@ -125,68 +143,77 @@ const styles = StyleSheet.create({
   dragHandle: {
     width: 40,
     height: 4,
-    backgroundColor: '#ddd',
+    backgroundColor: "#ddd",
     borderRadius: 2,
     marginBottom: 12,
   },
   headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   headerCount: {
     fontSize: 16,
-    color: '#666',
-    backgroundColor: '#f5f5f5',
+    color: "#666",
+    backgroundColor: "#f5f5f5",
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
   },
   toggleIcon: {
     fontSize: 18,
-    color: '#666',
+    color: "#666",
     marginTop: 8,
   },
   listContent: {
     padding: 16,
   },
   card: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 16,
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: '#f0f0f0',
-    overflow: 'hidden',
+    borderColor: "#f0f0f0",
+    overflow: "hidden",
   },
   cardSelected: {
-    borderColor: '#8B4513',
+    borderColor: "#8B4513",
     borderWidth: 3,
-    shadowColor: '#8B4513',
+    shadowColor: "#8B4513",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
   },
+  cardExpanded: {
+    borderColor: "#4CAF50",
+    borderWidth: 2,
+    shadowColor: "#4CAF50",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
+  },
   cardContent: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   cardImage: {
     width: 120,
     height: 120,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
   },
   cardImagePlaceholder: {
     width: 120,
     height: 120,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
   },
   placeholderText: {
     fontSize: 48,
@@ -197,41 +224,61 @@ const styles = StyleSheet.create({
   },
   marketName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 6,
   },
   infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 6,
   },
   category: {
     fontSize: 13,
-    color: '#666',
-    backgroundColor: '#f5f5f5',
+    color: "#666",
+    backgroundColor: "#f5f5f5",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
     marginRight: 8,
   },
   ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   rating: {
     fontSize: 13,
-    color: '#FFA500',
-    fontWeight: '600',
+    color: "#FFA500",
+    fontWeight: "600",
   },
   address: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
     marginBottom: 4,
   },
   description: {
     fontSize: 12,
-    color: '#888',
+    color: "#888",
     lineHeight: 16,
+  },
+  selectButton: {
+    backgroundColor: "#4CAF50",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    margin: 12,
+    marginTop: 0,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  selectButtonSelected: {
+    backgroundColor: "#8B4513",
+  },
+  selectButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  selectButtonTextSelected: {
+    fontWeight: "bold",
   },
 });

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 
 import { LanguageSelector } from "@/src/components/features/language-selector";
-import { MarketHorizontalList } from "@/src/components/features/market-horizontal-list";
+import { MarketVerticalList } from "@/src/components/features/market-vertical-list";
 
 // 플랫폼별로 Map 컴포넌트 import
 const MapViewComponent =
@@ -118,8 +118,8 @@ export default function HomeScreen() {
         />
       )}
 
-      {/* Market Horizontal List - Fixed at bottom */}
-      <MarketHorizontalList
+      {/* Market Vertical List - Fixed at bottom */}
+      <MarketVerticalList
         markets={sampleMarkets}
         selectedMarketId={selectedMarketId}
         onMarketPress={handleMarketPress}

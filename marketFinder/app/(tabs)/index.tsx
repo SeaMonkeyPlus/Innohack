@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 
 import { LanguageSelector } from "@/src/components/features/language-selector";
-import { MarketVerticalList } from "@/src/components/features/market-vertical-list";
+import { MarketList } from "@/src/components/features/market-list";
+import { ShopList } from "@/src/components/features/shop-list";
 
 // 플랫폼별로 Map 컴포넌트 import
 const MapViewComponent =
@@ -11,7 +12,7 @@ const MapViewComponent =
     ? require("@/src/components/features/map-view/index.web").MapViewComponent
     : require("@/src/components/features/map-view/index.native").MapViewComponent;
 
-// 부산 전통시장 샘플 데이터
+// 부산 전통시장 샘플 데이터 (products 포함)
 const sampleMarkets: Market[] = [
   {
     id: "1",
@@ -25,6 +26,57 @@ const sampleMarkets: Market[] = [
     images: ["https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800"],
     phone: "051-245-7389",
     openingHours: "09:00 - 20:00",
+    shops: [
+      {
+        id: "1-1",
+        name: "할매 호떡집",
+        address: "부산 중구 신창동4가 14-3",
+        rating: 4.8,
+        category: "떡·디저트",
+        description: "30년 전통의 씨앗호떡 전문점",
+        images: ["https://images.unsplash.com/photo-1603105037880-880cd4edfb0d?w=800"],
+        latitude: 35.0988,
+        longitude: 129.0290,
+        phone: "051-245-1234",
+        openingHours: "09:00 - 19:00",
+      },
+      {
+        id: "1-2",
+        name: "국제시장 분식",
+        address: "부산 중구 신창동4가 14-5",
+        rating: 4.6,
+        category: "분식",
+        description: "비빔당면과 떡볶이가 맛있는 분식집",
+        latitude: 35.0984,
+        longitude: 129.0294,
+        phone: "051-245-5678",
+        openingHours: "10:00 - 20:00",
+      },
+      {
+        id: "1-3",
+        name: "꿀떡 명가",
+        address: "부산 중구 신창동4가 14-2",
+        rating: 4.7,
+        category: "떡·디저트",
+        description: "달콤한 꿀떡 전문점",
+        latitude: 35.0987,
+        longitude: 129.0291,
+        phone: "051-245-9012",
+        openingHours: "09:30 - 18:30",
+      },
+      {
+        id: "1-4",
+        name: "부산 어묵 본점",
+        address: "부산 중구 신창동4가 14-6",
+        rating: 4.5,
+        category: "어묵",
+        description: "부산 특산 어묵 직판장",
+        latitude: 35.0985,
+        longitude: 129.0293,
+        phone: "051-245-3456",
+        openingHours: "08:00 - 20:00",
+      },
+    ],
   },
   {
     id: "2",
@@ -38,6 +90,69 @@ const sampleMarkets: Market[] = [
     images: ["https://images.unsplash.com/photo-1534777410147-54lost78309e?w=800"],
     phone: "051-713-8000",
     openingHours: "05:00 - 22:00",
+    shops: [
+      {
+        id: "2-1",
+        name: "해운대 회센터",
+        address: "부산 중구 자갈치해안로 54",
+        rating: 4.9,
+        category: "횟집",
+        description: "싱싱한 광어회 전문점",
+        images: ["https://images.unsplash.com/photo-1544025162-d76694265947?w=800"],
+        latitude: 35.0968,
+        longitude: 129.0304,
+        phone: "051-713-1111",
+        openingHours: "06:00 - 21:00",
+      },
+      {
+        id: "2-2",
+        name: "부산 생선구이",
+        address: "부산 중구 자갈치해안로 56",
+        rating: 4.7,
+        category: "생선구이",
+        description: "고등어·갈치 구이 전문",
+        latitude: 35.0964,
+        longitude: 129.0308,
+        phone: "051-713-2222",
+        openingHours: "07:00 - 20:00",
+      },
+      {
+        id: "2-3",
+        name: "자갈치 해물탕",
+        address: "부산 중구 자갈치해안로 53",
+        rating: 4.8,
+        category: "해물탕",
+        description: "시원한 국물의 해물탕 전문점",
+        latitude: 35.0967,
+        longitude: 129.0305,
+        phone: "051-713-3333",
+        openingHours: "08:00 - 22:00",
+      },
+      {
+        id: "2-4",
+        name: "꼬막 전문점",
+        address: "부산 중구 자갈치해안로 55",
+        rating: 4.6,
+        category: "조개·꼬막",
+        description: "매콤새콤한 꼬막 무침 전문",
+        latitude: 35.0965,
+        longitude: 129.0307,
+        phone: "051-713-4444",
+        openingHours: "09:00 - 20:00",
+      },
+      {
+        id: "2-5",
+        name: "해산물 직판장",
+        address: "부산 중구 자갈치해안로 57",
+        rating: 4.4,
+        category: "해산물",
+        description: "신선한 멍게와 다양한 해산물",
+        latitude: 35.0966,
+        longitude: 129.0309,
+        phone: "051-713-5555",
+        openingHours: "05:00 - 22:00",
+      },
+    ],
   },
   {
     id: "3",
@@ -51,6 +166,57 @@ const sampleMarkets: Market[] = [
     images: ["https://images.unsplash.com/photo-1533900298318-6b8da08a523e?w=800"],
     phone: "051-245-6594",
     openingHours: "10:00 - 23:00",
+    shops: [
+      {
+        id: "3-1",
+        name: "부평 닭꼬치",
+        address: "부산 중구 부평1길 38",
+        rating: 4.5,
+        category: "꼬치·야식",
+        description: "매콤달콤한 닭꼬치 전문점",
+        images: ["https://images.unsplash.com/photo-1588561387991-c4368fc48626?w=800"],
+        latitude: 35.0995,
+        longitude: 129.0315,
+        phone: "051-245-7777",
+        openingHours: "17:00 - 01:00",
+      },
+      {
+        id: "3-2",
+        name: "깡통시장 분식",
+        address: "부산 중구 부평1길 40",
+        rating: 4.6,
+        category: "분식",
+        description: "매콤한 떡볶이와 튀김 전문",
+        latitude: 35.0991,
+        longitude: 129.0319,
+        phone: "051-245-8888",
+        openingHours: "10:00 - 23:00",
+      },
+      {
+        id: "3-3",
+        name: "야시장 튀김",
+        address: "부산 중구 부평1길 39",
+        rating: 4.4,
+        category: "튀김",
+        description: "바삭한 모둠 튀김 전문점",
+        latitude: 35.0994,
+        longitude: 129.0316,
+        phone: "051-245-9999",
+        openingHours: "11:00 - 23:30",
+      },
+      {
+        id: "3-4",
+        name: "할매 순대국",
+        address: "부산 중구 부평1길 41",
+        rating: 4.5,
+        category: "순대·국밥",
+        description: "찹쌀 순대와 순대국 전문",
+        latitude: 35.0992,
+        longitude: 129.0318,
+        phone: "051-245-6666",
+        openingHours: "09:00 - 22:00",
+      },
+    ],
   },
   {
     id: "4",
@@ -64,6 +230,45 @@ const sampleMarkets: Market[] = [
     images: ["https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=800"],
     phone: "051-634-3984",
     openingHours: "07:00 - 20:00",
+    shops: [
+      {
+        id: "4-1",
+        name: "범일 돼지국밥",
+        address: "부산 동구 범일로 132",
+        rating: 4.7,
+        category: "국밥",
+        description: "진한 국물의 돼지국밥 전문점",
+        images: ["https://images.unsplash.com/photo-1585032226651-759b368d7246?w=800"],
+        latitude: 35.1388,
+        longitude: 129.0560,
+        phone: "051-634-1111",
+        openingHours: "07:00 - 22:00",
+      },
+      {
+        id: "4-2",
+        name: "부산 밀면",
+        address: "부산 동구 범일로 134",
+        rating: 4.5,
+        category: "밀면",
+        description: "시원한 밀면 전문점",
+        latitude: 35.1384,
+        longitude: 129.0564,
+        phone: "051-634-2222",
+        openingHours: "11:00 - 21:00",
+      },
+      {
+        id: "4-3",
+        name: "전통 부침개",
+        address: "부산 동구 범일로 133",
+        rating: 4.3,
+        category: "부침개·전",
+        description: "바삭한 야채전과 해물전",
+        latitude: 35.1387,
+        longitude: 129.0561,
+        phone: "051-634-3333",
+        openingHours: "10:00 - 20:00",
+      },
+    ],
   },
   {
     id: "5",
@@ -77,30 +282,83 @@ const sampleMarkets: Market[] = [
     images: ["https://images.unsplash.com/photo-1542838132-92c53300491e?w=800"],
     phone: "051-418-1863",
     openingHours: "10:00 - 19:00",
+    shops: [
+      {
+        id: "5-1",
+        name: "예술가의 베이커리",
+        address: "부산 영도구 절영로 205",
+        rating: 4.6,
+        category: "베이커리",
+        description: "예술가의 손맛이 담긴 수제 쿠키",
+        images: ["https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=800"],
+        latitude: 35.0774,
+        longitude: 129.0471,
+        phone: "051-418-1111",
+        openingHours: "10:00 - 19:00",
+      },
+      {
+        id: "5-2",
+        name: "깡깡이 수제잼",
+        address: "부산 영도구 절영로 207",
+        rating: 4.5,
+        category: "잼·청",
+        description: "신선한 과일로 만든 수제 잼",
+        latitude: 35.0770,
+        longitude: 129.0475,
+        phone: "051-418-2222",
+        openingHours: "10:30 - 18:30",
+      },
+      {
+        id: "5-3",
+        name: "아트 카페",
+        address: "부산 영도구 절영로 206",
+        rating: 4.7,
+        category: "카페",
+        description: "예술적인 라떼 아트 카페",
+        latitude: 35.0773,
+        longitude: 129.0472,
+        phone: "051-418-3333",
+        openingHours: "09:00 - 21:00",
+      },
+    ],
   },
 ];
 
 export default function HomeScreen() {
   const [selectedMarketId, setSelectedMarketId] = useState<string | undefined>(undefined);
+  const [focusedLocation, setFocusedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isListMinimized, setIsListMinimized] = useState(false);
+  const [viewMode, setViewMode] = useState<"markets" | "shops">("markets");
 
   const handleMarkerPress = (market: Market) => {
     setSelectedMarketId(market.id);
-    setIsListMinimized(false); // 마커 클릭시 리스트 열기
+    setIsListMinimized(false);
   };
 
   const handleMarketPress = (market: Market) => {
     setSelectedMarketId(market.id);
+    setFocusedLocation({ latitude: market.latitude, longitude: market.longitude });
+    setViewMode("shops");
+    setIsListMinimized(false);
   };
 
-  const handleMarketDetailPress = (market: Market) => {
-    // TODO: 상세 정보 모달 열기
-    console.log("상세 정보:", market.name);
+  const handleShopPress = (shop: any) => {
+    if (shop.latitude && shop.longitude) {
+      setFocusedLocation({ latitude: shop.latitude, longitude: shop.longitude });
+    }
+  };
+
+  const handleBackToMarkets = () => {
+    setViewMode("markets");
+    setFocusedLocation(null);
+    setIsListMinimized(false);
   };
 
   const handleToggleMinimize = () => {
     setIsListMinimized(!isListMinimized);
   };
+
+  const selectedMarket = sampleMarkets.find((m) => m.id === selectedMarketId);
 
   return (
     <View style={styles.container}>
@@ -109,22 +367,33 @@ export default function HomeScreen() {
         <LanguageSelector />
       </View>
 
-      {/* Map - 웹과 네이티브 모두 표시 */}
+      {/* Map */}
       <MapViewComponent
         markets={sampleMarkets}
         onMarkerPress={handleMarkerPress}
         selectedMarketId={selectedMarketId}
+        focusedLocation={focusedLocation}
       />
 
-      {/* Market Vertical List - Fixed at bottom */}
-      <MarketVerticalList
-        markets={sampleMarkets}
-        selectedMarketId={selectedMarketId}
-        onMarketPress={handleMarketPress}
-        onMarketDetailPress={handleMarketDetailPress}
-        isMinimized={isListMinimized}
-        onToggleMinimize={handleToggleMinimize}
-      />
+      {/* List - Market List or Shop List */}
+      {viewMode === "markets" ? (
+        <MarketList
+          markets={sampleMarkets}
+          selectedMarketId={selectedMarketId}
+          onMarketPress={handleMarketPress}
+          isMinimized={isListMinimized}
+          onToggleMinimize={handleToggleMinimize}
+        />
+      ) : selectedMarket ? (
+        <ShopList
+          shops={selectedMarket.shops}
+          marketName={selectedMarket.name}
+          onBack={handleBackToMarkets}
+          isMinimized={isListMinimized}
+          onToggleMinimize={handleToggleMinimize}
+          onShopPress={handleShopPress}
+        />
+      ) : null}
     </View>
   );
 }
@@ -133,28 +402,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
-  },
-  mapPlaceholder: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#e8f4f8",
-    padding: 20,
-  },
-  mapPlaceholderText: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  mapPlaceholderSubtext: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 8,
-  },
-  mapPlaceholderNote: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
   },
   languageSelectorContainer: {
     position: "absolute",

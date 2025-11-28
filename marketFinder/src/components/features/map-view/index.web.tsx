@@ -1,6 +1,6 @@
 import { Market } from '@/src/types/market';
 import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useLanguage } from '../../../contexts/language-context';
 
@@ -8,6 +8,7 @@ interface MapViewComponentProps {
   markets: Market[];
   onMarkerPress?: (market: Market) => void;
   selectedMarketId?: string;
+  focusedLocation?: { latitude: number; longitude: number } | null;
 }
 
 const mapContainerStyle = {
@@ -15,15 +16,31 @@ const mapContainerStyle = {
   height: '100%',
 };
 
-export function MapViewComponent({ markets, onMarkerPress, selectedMarketId }: MapViewComponentProps) {
+export function MapViewComponent({ markets, onMarkerPress, selectedMarketId, focusedLocation }: MapViewComponentProps) {
   const { selectedLanguage } = useLanguage();
   const [mapKey, setMapKey] = useState(0);
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   // 기본 위치: 부산역
-  const center = {
+  const [center, setCenter] = useState({
     lat: 35.1156,
     lng: 129.0403,
-  };
+  });
+
+  // focusedLocation이 변경되면 지도 이동
+  useEffect(() => {
+    if (focusedLocation && mapRef.current) {
+      // 리스트가 하단 40%를 가리므로, 마커를 보이는 영역(상단 60%)의 중앙에 놓기 위해
+      // 위도를 약간 위로 보정
+      const latitudeOffset = 0.002;
+      const newCenter = {
+        lat: focusedLocation.latitude + latitudeOffset,
+        lng: focusedLocation.longitude,
+      };
+      mapRef.current.panTo(newCenter);
+      mapRef.current.setZoom(16);
+    }
+  }, [focusedLocation]);
 
   // 언어가 변경될 때마다 지도를 다시 로드
   useEffect(() => {
@@ -67,6 +84,9 @@ export function MapViewComponent({ markets, onMarkerPress, selectedMarketId }: M
         mapContainerStyle={mapContainerStyle}
         center={center}
         zoom={13}
+        onLoad={(map) => {
+          mapRef.current = map;
+        }}
         options={{
           zoomControl: true,
           streetViewControl: false,

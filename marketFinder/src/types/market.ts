@@ -1,3 +1,5 @@
+import { Shop } from './shop';
+
 export interface Market {
   id: string;
   name: string;
@@ -10,4 +12,5 @@ export interface Market {
   images?: string[];
   phone?: string;
   openingHours?: string;
+  shops: Shop[];
 }

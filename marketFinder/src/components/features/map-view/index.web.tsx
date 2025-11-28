@@ -1,7 +1,7 @@
 import { GoogleMap, useLoadScript } from '@react-google-maps/api';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useLanguage } from '../../contexts/language-context';
+import { useLanguage } from '../../../contexts/language-context';
 
 interface MapViewComponentProps {
   initialRegion?: {

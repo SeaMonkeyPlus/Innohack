@@ -24,9 +24,12 @@ export function MapViewComponent({ markets, onMarkerPress, selectedMarketId, foc
   // focusedMarket이 변경되면 지도 이동
   useEffect(() => {
     if (focusedMarket && mapRef.current) {
+      // 리스트가 하단 40%를 가리므로, 마커를 보이는 영역(상단 60%)의 중앙에 놓기 위해
+      // 위도를 약간 위로 보정 (latitudeDelta의 20%만큼)
+      const latitudeOffset = 0.002;
       mapRef.current.animateToRegion(
         {
-          latitude: focusedMarket.latitude,
+          latitude: focusedMarket.latitude + latitudeOffset,
           longitude: focusedMarket.longitude,
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,

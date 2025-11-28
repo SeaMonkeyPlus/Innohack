@@ -1,6 +1,7 @@
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
@@ -32,14 +33,51 @@ export default function CameraCapture() {
     height: SCREEN_HEIGHT * 0.4,
   });
   const [isSelecting, setIsSelecting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const cameraRef = useRef<CameraView>(null);
   const pan = useRef(new Animated.ValueXY()).current;
   const size = useRef(new Animated.ValueXY({ x: cropArea.width, y: cropArea.height })).current;
 
-  // 권한 확인
+  // 드래그 핸들러 (영역 이동) - 항상 같은 순서로 Hook 호출
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gesture) => {
+        const newX = Math.max(0, Math.min(SCREEN_WIDTH - cropArea.width, gesture.moveX - cropArea.width / 2));
+        const newY = Math.max(0, Math.min(SCREEN_HEIGHT - cropArea.height, gesture.moveY - cropArea.height / 2));
+        setCropArea((prev) => ({ ...prev, x: newX, y: newY }));
+      },
+    })
+  ).current;
+
+  // 크기 조절 핸들러
+  const resizeResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gesture) => {
+        const newWidth = Math.max(100, Math.min(SCREEN_WIDTH - cropArea.x, gesture.moveX - cropArea.x));
+        const newHeight = Math.max(100, Math.min(SCREEN_HEIGHT - cropArea.y, gesture.moveY - cropArea.y));
+        setCropArea((prev) => ({ ...prev, width: newWidth, height: newHeight }));
+      },
+    })
+  ).current;
+
+  // 권한 자동 요청 - 모든 Hook 다음에 배치
+  useEffect(() => {
+    if (permission && !permission.granted && permission.canAskAgain) {
+      requestPermission();
+    }
+  }, [permission]);
+
+  // 권한 로딩 중
   if (!permission) {
-    return <View style={styles.container} />;
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+        <Text style={styles.permissionText}>카메라를 초기화하는 중...</Text>
+      </View>
+    );
   }
 
   if (!permission.granted) {
@@ -57,19 +95,27 @@ export default function CameraCapture() {
 
   // 사진 촬영
   const takePicture = async () => {
-    if (cameraRef.current) {
-      try {
-        const photo = await cameraRef.current.takePictureAsync({
-          quality: 0.8,
-        });
-        if (photo) {
-          setCapturedImage(photo.uri);
-          setIsSelecting(true);
-        }
-      } catch (error) {
-        console.error("사진 촬영 오류:", error);
+    if (!cameraRef.current) {
+      Alert.alert("오류", "카메라가 준비되지 않았습니다.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.8,
+      });
+      if (photo && photo.uri) {
+        setCapturedImage(photo.uri);
+        setIsSelecting(true);
+      } else {
         Alert.alert("오류", "사진 촬영에 실패했습니다.");
       }
+    } catch (error) {
+      console.error("사진 촬영 오류:", error);
+      Alert.alert("오류", "사진 촬영에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -138,30 +184,6 @@ export default function CameraCapture() {
     }
   };
 
-  // 드래그 핸들러 (영역 이동)
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gesture) => {
-        const newX = Math.max(0, Math.min(SCREEN_WIDTH - cropArea.width, gesture.moveX - cropArea.width / 2));
-        const newY = Math.max(0, Math.min(SCREEN_HEIGHT - cropArea.height, gesture.moveY - cropArea.height / 2));
-        setCropArea((prev) => ({ ...prev, x: newX, y: newY }));
-      },
-    })
-  ).current;
-
-  // 크기 조절 핸들러
-  const resizeResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gesture) => {
-        const newWidth = Math.max(100, Math.min(SCREEN_WIDTH - cropArea.x, gesture.moveX - cropArea.x));
-        const newHeight = Math.max(100, Math.min(SCREEN_HEIGHT - cropArea.y, gesture.moveY - cropArea.y));
-        setCropArea((prev) => ({ ...prev, width: newWidth, height: newHeight }));
-      },
-    })
-  ).current;
-
   // 촬영 화면
   if (!capturedImage) {
     return (
@@ -175,8 +197,12 @@ export default function CameraCapture() {
             </View>
 
             <View style={styles.bottomBar}>
-              <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
-                <View style={styles.captureButtonInner} />
+              <TouchableOpacity style={styles.captureButton} onPress={takePicture} disabled={isLoading}>
+                {isLoading ? (
+                  <ActivityIndicator size="large" color="#fff" />
+                ) : (
+                  <View style={styles.captureButtonInner} />
+                )}
               </TouchableOpacity>
             </View>
           </View>

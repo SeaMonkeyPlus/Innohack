@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import { LanguageSelector } from "@/src/components/features/language-selector";
 import RestaurantDetail from "@/src/components/features/restaurant-detail";
 import { Restaurant } from "@/src/types/restaurant";
-import { LanguageSelector } from "@components/features/language-selector";
-import { MapViewComponent } from "@components/features/map-view";
+
+// 플랫폼별로 Map 컴포넌트 import
+const MapViewComponent =
+  Platform.OS === "web" ? require("@/src/components/features/map-view/index.web").MapViewComponent : null;
 
 // 예제 음식점 데이터
 const sampleRestaurants: Restaurant[] = [
@@ -62,8 +65,17 @@ export default function HomeScreen() {
         <LanguageSelector />
       </View>
 
-      {/* Google Map */}
-      <MapViewComponent />
+      {/* Map - Web에서만 표시, 모바일에서는 플레이스홀더 */}
+      {Platform.OS === "web" && MapViewComponent ? (
+        <MapViewComponent />
+      ) : (
+        <View style={styles.mapPlaceholder}>
+          <Text style={styles.mapPlaceholderText}>🗺️</Text>
+          <Text style={styles.mapPlaceholderSubtext}>지도 보기</Text>
+          <Text style={styles.mapPlaceholderNote}>(개발 빌드에서 활성화됩니다)</Text>
+          <Text style={styles.mapPlaceholderInfo}>카메라 탭에서 촬영 기능을 테스트하세요!</Text>
+        </View>
+      )}
 
       {/* Restaurant List Button - Fixed at bottom */}
       <View style={styles.restaurantListContainer}>
@@ -99,6 +111,35 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f5f5f5",
+  },
+  mapPlaceholder: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#e8f4f8",
+    padding: 20,
+  },
+  mapPlaceholderText: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  mapPlaceholderSubtext: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 8,
+  },
+  mapPlaceholderNote: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 20,
+  },
+  mapPlaceholderInfo: {
+    fontSize: 16,
+    color: "#4CAF50",
+    fontWeight: "600",
+    textAlign: "center",
   },
   languageSelectorContainer: {
     position: "absolute",

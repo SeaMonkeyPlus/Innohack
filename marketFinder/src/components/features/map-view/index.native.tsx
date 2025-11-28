@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
-import { useLanguage } from '../../contexts/language-context';
+import { useLanguage } from '../../../contexts/language-context';
 
 interface MapViewComponentProps {
   initialRegion?: {

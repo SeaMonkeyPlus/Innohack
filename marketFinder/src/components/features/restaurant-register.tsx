@@ -1,7 +1,18 @@
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import React, { useState } from "react";
-import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useRouter } from "expo-router";
 import { MenuItem, Shop } from "../../types/shop";
 import { LanguageSelector } from "./language-selector";
 
@@ -21,9 +32,11 @@ interface FormData {
 const VERIFICATION_CODE = "0000"; // 임시 검증 코드
 
 export default function RestaurantRegister() {
+  const router = useRouter();
   const [isVerified, setIsVerified] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: "",
     phone: "",
@@ -163,50 +176,96 @@ export default function RestaurantRegister() {
   // 등록 완료
   const handleSubmit = async () => {
     try {
-      const newShop: Omit<Shop, "id" | "rating"> = {
+      // 이미지 검증
+      if (formData.images.length === 0) {
+        Alert.alert("필수 입력", "최소 1개의 가게 사진을 추가해주세요.");
+        return;
+      }
+
+      setIsLoading(true);
+
+      // FormData 생성
+      const apiFormData = new FormData();
+      apiFormData.append("name", formData.name);
+      apiFormData.append("call_number", formData.phone || "");
+
+      // 이미지 파일을 각각 추가 (predictFoodImage와 동일한 방식)
+      console.log("Adding images to FormData:", formData.images.length);
+
+      for (let i = 0; i < formData.images.length; i++) {
+        const imageUri = formData.images[i];
+        const filename = `shop_photo_${i}.jpg`;
+
+        // 웹 환경인 경우 Blob으로 변환 (predictFoodImage와 동일)
+        if (imageUri.startsWith("data:") || imageUri.startsWith("blob:")) {
+          console.log(`Converting web blob to file ${i}:`, imageUri.substring(0, 50));
+          const response = await fetch(imageUri);
+          const blob = await response.blob();
+          apiFormData.append("files", blob, filename);
+        } else {
+          // React Native 환경
+          const fileData = {
+            uri: imageUri,
+            type: "image/jpeg",
+            name: filename,
+          };
+          console.log(`Adding native file ${i}:`, fileData);
+          apiFormData.append("files", fileData as any);
+        }
+      }
+
+      const apiUrl = process.env.EXPO_PUBLIC_REGISTER_API_URL;
+      if (!apiUrl) {
+        throw new Error("API URL이 설정되지 않았습니다.");
+      }
+
+      console.log("Sending data to:", apiUrl);
+      console.log("Data:", {
         name: formData.name,
-        address: formData.address || undefined,
-        description: formData.description || undefined,
-        category: formData.category || undefined,
-        phone: formData.phone || undefined,
-        openingHours: formData.openingHours || undefined,
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-        images: formData.images.length > 0 ? formData.images : undefined,
-        menu: formData.menuItems.length > 0 ? formData.menuItems : undefined,
-      };
+        call_number: formData.phone || "",
+        filesCount: formData.images.length,
+      });
 
-      console.log("등록할 가게 정보:", newShop);
+      // API 요청 (Content-Type 헤더 제거 - FormData 사용 시 자동 설정됨)
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        body: apiFormData,
+      });
 
-      // TODO: 백엔드 API 연동
-      // await createShop(newShop);
+      console.log("Response status:", response.status);
 
-      Alert.alert("성공", "가게 등록이 완료되었습니다!", [
-        {
-          text: "확인",
-          onPress: () => {
-            // 폼 초기화
-            setFormData({
-              name: "",
-              phone: "",
-              address: "",
-              description: "",
-              category: "",
-              openingHours: "",
-              latitude: 0,
-              longitude: 0,
-              images: [],
-              menuItems: [],
-            });
-            setStep(1);
-            setIsVerified(false);
-            setVerificationCode("");
-          },
-        },
-      ]);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "등록에 실패했습니다.");
+      }
+
+      console.log("등록 성공:", result);
+
+      // 폼 초기화
+      setFormData({
+        name: "",
+        phone: "",
+        address: "",
+        description: "",
+        category: "",
+        openingHours: "",
+        latitude: 0,
+        longitude: 0,
+        images: [],
+        menuItems: [],
+      });
+      setStep(1);
+      setIsVerified(false);
+      setVerificationCode("");
+      setIsLoading(false);
+
+      // 홈으로 이동
+      router.push("/");
     } catch (error) {
       console.error("가게 등록 오류:", error);
-      Alert.alert("오류", "가게 등록에 실패했습니다. 다시 시도해주세요.");
+      setIsLoading(false);
+      Alert.alert("오류", error instanceof Error ? error.message : "가게 등록에 실패했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -484,6 +543,16 @@ export default function RestaurantRegister() {
 
   return (
     <View style={styles.container}>
+      {/* 로딩 오버레이 */}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4CAF50" />
+            <Text style={styles.loadingText}>등록 중...</Text>
+          </View>
+        </View>
+      )}
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* 진행 상태 표시 */}
         <View style={styles.progressContainer}>
@@ -883,5 +952,33 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
+  },
+  loadingContainer: {
+    backgroundColor: "#fff",
+    padding: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  loadingText: {
+    marginTop: 15,
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "600",
   },
 });
